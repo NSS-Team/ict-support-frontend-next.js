@@ -9,3 +9,11 @@ export const loginCheckResponseSchema = z.object({
 });
 
 export type LoginCheckResponse = z.infer<typeof loginCheckResponseSchema>;
+
+// location schema 
+export const locationSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+});
+
+export type Location = z.infer<typeof locationSchema>;

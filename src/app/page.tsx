@@ -36,7 +36,7 @@ const { data, isLoading } = api.auth.loginCheck.useQuery(undefined, {
 
   if (!isLoaded || isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center mx-auto">
         <Loader />
       </div>
     );

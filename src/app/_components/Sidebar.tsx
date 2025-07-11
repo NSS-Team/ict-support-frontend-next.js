@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  Home,
-  Users,
-  UserPlus,
-  MoreHorizontal,
-  UserCircle,
-  LogOut,
-  Bell,
-} from 'lucide-react';
+import { Home,Users, UserPlus, UserCircle, LogOut, Bell,} from 'lucide-react';
 import Link from 'next/link';
 import '~/styles/globals.css';
 
@@ -16,7 +8,6 @@ const navItems = [
   { name: 'Complaints', icon: Home },
   { name: 'Teams', icon: Users },
   { name: 'Registrations', icon: UserPlus },
-  { name: 'more', icon: MoreHorizontal },
   { name: 'Accounts', icon: UserCircle },
   { name: 'Logout', icon: LogOut, red: true },
 ];

@@ -14,14 +14,15 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 // schema imports 
 import { loginCheckResponseSchema } from "~/types/responseTypes/authResponses";
+import { locationSchema } from "~/types/responseTypes/authResponses";
 
 
-const BASE_URL = "https://8e28a0c59f07.ngrok-free.app/api/auth";
+const BASE_URL = "https://3250412b8b30.ngrok-free.app/api/auth";
 
 // Create and export the auth router
 export const authRouter = createTRPCRouter({
   completeProfile: publicProcedure
-    .input(z.object({ name: z.string(), email: z.string().email() }))
+    .input(z.object({ name: z.string(), email: z.string().email() , fullName: z.string(), phone: z.string(), locationId: z.string(), role: z.string(), department: z.string(), designation: z.string(), officeNumber: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const res = await fetch(`${BASE_URL}/addProfile`, {
         method: "POST",
@@ -31,6 +32,7 @@ export const authRouter = createTRPCRouter({
         },
         body: JSON.stringify(input),
       });
+      console.log(input);
       return await res.json();
     }),
 
@@ -45,6 +47,7 @@ export const authRouter = createTRPCRouter({
     return loginCheckResponseSchema.parse(json);
   }),
 
+  // this is to approve a user
   approveUser: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -65,6 +68,17 @@ export const authRouter = createTRPCRouter({
       },
     });
     return await res.json();
+  }),
+
+  // this is to fetch all the locations
+  getLocations: publicProcedure.query(async ({ ctx }) => {
+    const res = await fetch(`${BASE_URL}/locations`, {    
+      headers: {
+        Authorization: `Bearer ${ctx.token}`,
+      },
+    });
+    const json =  await res.json();
+    return locationSchema.array().parse(json);
   }),
 
   loginWithCode: publicProcedure
