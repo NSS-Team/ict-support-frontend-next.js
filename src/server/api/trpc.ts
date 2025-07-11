@@ -25,7 +25,7 @@ import { auth } from "@clerk/nextjs/server";
  */
 
 // i changed this createTRPCContext() to send the token
-export const createTRPCContext = async () => {
+export const createTRPCContext = async (opts: { headers: Headers }) => {
   const { sessionId, userId, getToken } = await auth();
 
   const token = sessionId ? await getToken() : null;

@@ -8,7 +8,7 @@ const navItems = [
   { name: 'Complaints', icon: Home },
   { name: 'Teams', icon: Users },
   { name: 'Registrations', icon: UserPlus },
-  { name: 'Accounts', icon: UserCircle },
+  { name: 'My Account', icon: UserCircle },
   { name: 'Logout', icon: LogOut, red: true },
 ];
 
@@ -36,13 +36,6 @@ const Sidebar = () => {
           </Link>
         ))}
       </nav>
-
-      {/* Bottom Bell Icon */}
-      <div className="p-4 mt-auto">
-        <div className="w-full flex justify-center">
-          <Bell className="w-6 h-6 text-red-500" />
-        </div>
-      </div>
     </aside>
   );
 };

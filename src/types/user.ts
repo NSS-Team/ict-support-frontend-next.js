@@ -1,16 +1,22 @@
-export type UserRole = 'employee' | 'manager' | 'admin' | 'worker';
+import { z } from 'zod';
+import { userRoleEnum } from './enums';
 
-export default interface User {
-  id: string;
-  fullName: string;
-  email: string;
-  officeNumber: string;
-  department: string;
-  designation: string;
-  phone: string;
-  locationId: string;
-  role: UserRole;
-  is_approved: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+export const UserSchema = z.object({
+  id: z.string(),
+  fullName: z.string(),
+  email: z.string().email(),
+  officeNumber: z.string(),
+  department: z.string(),
+  designation: z.string(),
+  phone: z.string(),
+  locationId: z.string(),
+  role: userRoleEnum,
+  is_approved: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type User = z.infer<typeof UserSchema>;
+
+
+
