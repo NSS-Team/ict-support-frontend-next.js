@@ -15,16 +15,17 @@ router.post('/update-password' , changePasswordAfterCodeLogin) //working
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 // schema imports 
-import { loginCheckResponseSchema } from "~/types/responseTypes/authResponses";
-import { locationsSchema } from "~/types/location";
+import {loginCheckResponseSchema } from "~/types/responseTypes/authResponses";
 
 
-const BASE_URL = "https://7b89e3952de0.ngrok-free.app/api/auth";
+
 
 
 // the auth router
 // this router handles all the authentication related operations
 export const authRouter = createTRPCRouter({
+
+  
 
   // this is to complete the profile of a user
   // this is called when a user signs in for the first time
@@ -43,6 +44,9 @@ export const authRouter = createTRPCRouter({
       }
     ))
     .mutation(async ({ ctx, input }) => {
+
+      const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
+
       const res = await fetch(`${BASE_URL}/addProfile`, {
         method: "POST",
         headers: {
@@ -60,6 +64,7 @@ export const authRouter = createTRPCRouter({
   approveUser: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
       const res = await fetch(`${BASE_URL}/approve-user/${input.id}`, {
         method: "POST",
         headers: {
@@ -74,6 +79,7 @@ export const authRouter = createTRPCRouter({
   loginWithCode: publicProcedure
     .input(z.object({ code: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
       const res = await fetch(`${BASE_URL}/login-with-code`, {
         method: "POST",
         headers: {
@@ -96,6 +102,7 @@ export const authRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
       const res = await fetch(`${BASE_URL}/update-password`, {
         method: "POST",
         headers: {
@@ -112,6 +119,7 @@ export const authRouter = createTRPCRouter({
   // calling it when the user signs in
   // this will redirect the user to the appropriate page based on the response
   loginCheck: publicProcedure.query(async ({ ctx }) => {
+    const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
     const res = await fetch(`${BASE_URL}/login-check`, {
       headers: {
         Authorization: `Bearer ${ctx.token}`,
@@ -119,12 +127,15 @@ export const authRouter = createTRPCRouter({
     });
 
     const json = await res.json();
-    return loginCheckResponseSchema.parse(json);
+    const validated = loginCheckResponseSchema.parse(json);
+    console.log('loginCheck response:', validated);
+    return validated;
   }),
 
 
   // this is to generate codes for the user (when the user completes and submits his profile )
   generateCodes: publicProcedure.mutation(async ({ ctx }) => {
+    const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
     const res = await fetch(`${BASE_URL}/generate-codes`, {
       method: "POST",
       headers: {
@@ -135,16 +146,7 @@ export const authRouter = createTRPCRouter({
   }),
 
 
-  // this is to fetch all the locations (for the dropdown)
-  getLocations: publicProcedure.query(async ({ ctx }) => {
-    const res = await fetch(`${BASE_URL}/locations`, {
-      headers: {
-        Authorization: `Bearer ${ctx.token}`,
-      },
-    });
-    const json = await res.json();
-    return locationsSchema.array().parse(json);
-  }),
+  
 
 
  

@@ -1,5 +1,5 @@
 'use client';
-
+import { useToast } from './_components/ToastProvider';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, SignIn } from '@clerk/nextjs';
@@ -9,28 +9,32 @@ import type { AppRouter } from '~/server/api/root';
 import type { inferRouterOutputs } from '@trpc/server';
 
 
-type LoginCheckResponse = inferRouterOutputs<AppRouter>['auth']['loginCheck'];
-
 export default function Home() {
+  const { addToast } = useToast();
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
 
-const { data, isLoading } = api.auth.loginCheck.useQuery(undefined, {
-  enabled: isLoaded && isSignedIn,
-});
-
-// Handle navigation based on loginCheck data
+  const { data, isLoading } = api.auth.loginCheck.useQuery(undefined, {
+    enabled: isLoaded && isSignedIn,
+  });
+  const responseData = data?.data;
+  // Handle navigation based on loginCheck data
   useEffect(() => {
-  if (data) {
-    if (!data.exist) {
-      router.push('/complete-profile');
-    } else if (!data.approved) {
-      router.push('/approval-pending');
-    } else {
-      router.push('/dashboard');
+    if (data?.success) {
+      if (responseData) {
+        // if exists and not approved, redirect to complete profile
+        if (!responseData.exist) {
+          router.push('/complete-profile');
+        } else if (!responseData.approved) {
+          router.push('/complete');
+          addToast('Your account is not approved yet.');
+        }
+        else if (responseData.approved) {
+          router.push('/dashboard');
+        }
+      }
     }
-  }
-}, [data, router]);
+  }, [data, router]);
 
 
 
@@ -42,7 +46,7 @@ const { data, isLoading } = api.auth.loginCheck.useQuery(undefined, {
     );
   }
 
-  if (!isSignedIn) {
+  if (!isSignedIn || ( !responseData?.approved && responseData?.exist)) {
     return (
       <div className="main bg-white h-[calc(100vh-4rem)] flex items-center justify-center">
         <div className="signInContainer m-auto">

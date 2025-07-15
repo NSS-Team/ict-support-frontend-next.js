@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { Clock, CheckCircle } from 'lucide-react';
-import type User from '~/types/user';
-import type { UserRole } from '~/types/user';
+import type { User } from '~/types/user';
+import type { UserRole } from '~/types/enums';
 import { api } from '~/trpc/react';
 import { useUser } from '@clerk/nextjs';
+
+
 
 interface Props {
   initialUser: User;
@@ -18,23 +20,20 @@ const requiredFields: (keyof User)[] = [
   'phone',
   'locationId',
   'role',
-  'department',
-  'designation',
-  'officeNumber',
 ];
 
 const UserInfoForm = ({ initialUser, roleOptions, onSubmit }: Props) => {
+  
+
+
   const [formData, setFormData] = useState<Partial<User>>(initialUser);
   const [step, setStep] = useState<number>(1);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [submitted, setSubmitted] = useState<boolean>(false);
-
   const { user } = useUser();
   const email = user?.emailAddresses[0]?.emailAddress ?? '';
-
-  const { data: locationOptions = [], isLoading: isLocationsLoading } =
-    api.auth.getLocations.useQuery();
-
+  const { data: locationResponse = [], isLoading: isLocationsLoading } = api.locations.getLocations.useQuery();
+  const locationOptions = Array.isArray(locationResponse) ? [] : locationResponse?.data ?? [];
   const { mutate: completeProfile, isPending: isSubmitting } =
     api.auth.completeProfile.useMutation({
       onSuccess: () => {
@@ -46,7 +45,7 @@ const UserInfoForm = ({ initialUser, roleOptions, onSubmit }: Props) => {
       },
     });
 
-
+    console.log('UserInfoForm');
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -107,9 +106,8 @@ const UserInfoForm = ({ initialUser, roleOptions, onSubmit }: Props) => {
         </div>
         <div className="w-full bg-gray-200 h-2 rounded">
           <div
-            className={`h-2 rounded bg-neutral-800 transition-all duration-300 ${
-              step === 1 ? 'w-1/2' : 'w-full'
-            }`}
+            className={`h-2 rounded bg-neutral-800 transition-all duration-300 ${step === 1 ? 'w-1/2' : 'w-full'
+              }`}
           />
         </div>
       </div>
@@ -175,11 +173,10 @@ const UserInfoForm = ({ initialUser, roleOptions, onSubmit }: Props) => {
               type="button"
               disabled={isSubmitting}
               onClick={handleFinalSubmit}
-              className={`px-6 py-2 flex items-center gap-2 rounded-md transition text-white ${
-                isSubmitting
+              className={`px-6 py-2 flex items-center gap-2 rounded-md transition text-white ${isSubmitting
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-green-600 hover:bg-green-500'
-              }`}
+                }`}
             >
               <CheckCircle className="w-5 h-5" />
               {isSubmitting ? 'Submitting...' : 'Submit for Admin Approval'}
@@ -230,11 +227,10 @@ const InputField = ({
       name={name}
       value={value}
       onChange={onChange}
-      className={`rounded-md bg-white border px-4 py-2 focus:outline-none focus:ring-2 ${
-        error
+      className={`rounded-md bg-white border px-4 py-2 focus:outline-none focus:ring-2 ${error
           ? 'border-red-500 focus:ring-red-300'
           : 'border-gray-300 focus:ring-neutral-300'
-      }`}
+        }`}
     />
     {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
   </div>
@@ -263,11 +259,10 @@ const SelectField = ({
       name={name}
       value={value}
       onChange={onChange}
-      className={`rounded-md bg-white border px-4 py-2 focus:outline-none focus:ring-2 ${
-        error
+      className={`rounded-md bg-white border px-4 py-2 focus:outline-none focus:ring-2 ${error
           ? 'border-red-500 focus:ring-red-300'
           : 'border-gray-300 focus:ring-neutral-300'
-      }`}
+        }`}
     >
       <option value="" disabled>
         Select {label}
