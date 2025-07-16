@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth, SignIn } from '@clerk/nextjs';
 import Loader from '~/app/_components/Loader';
 import { api } from '~/trpc/react';
-import type { AppRouter } from '~/server/api/root';
-import type { inferRouterOutputs } from '@trpc/server';
 
 
 export default function Home() {
@@ -14,9 +12,7 @@ export default function Home() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
 
-  const { data, isLoading } = api.auth.loginCheck.useQuery(undefined, {
-    enabled: isLoaded && isSignedIn,
-  });
+  const { data, isLoading } = api.auth.loginCheck.useQuery(undefined, { enabled: isLoaded && isSignedIn,});
   const responseData = data?.data;
   // Handle navigation based on loginCheck data
   useEffect(() => {
@@ -26,7 +22,7 @@ export default function Home() {
         if (!responseData.exist) {
           router.push('/complete-profile');
         } else if (!responseData.approved) {
-          router.push('/complete');
+          router.push('/complete-profile');
           addToast('Your account is not approved yet.');
         }
         else if (responseData.approved) {

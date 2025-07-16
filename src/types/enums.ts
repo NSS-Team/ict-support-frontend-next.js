@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const userRoleEnum = z.enum(["employee", "manager", "admin", "worker"]);
-export type UserRole = z.infer<typeof userRoleEnum>;
+export const supportStaffRolesEnum = z.enum([ "manager", "worker"]);
+export type supportStaffRoles = z.infer<typeof supportStaffRolesEnum>;
 
 export const submissionPreferenceEnum = z.enum(["remote", "on_site", "call_back"]);
 export type SubmissionPreference = z.infer<typeof submissionPreferenceEnum>;

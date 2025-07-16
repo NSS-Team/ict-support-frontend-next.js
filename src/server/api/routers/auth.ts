@@ -32,12 +32,11 @@ export const authRouter = createTRPCRouter({
   completeProfile: publicProcedure
     .input(z.object(
       {
-        name: z.string(),
         email: z.string().email(),
-        fullName: z.string(),
+        firstName: z.string(),
+        lastName: z.string(),
         phone: z.string(),
         locationId: z.string(),
-        role: z.string(),
         department: z.string(),
         designation: z.string(),
         officeNumber: z.string()
@@ -55,9 +54,35 @@ export const authRouter = createTRPCRouter({
         },
         body: JSON.stringify(input),
       });
-      return await res.json();
+      const json =  await res.json();
+      console.log(json)
+      return json
     }),
 
+
+    // this is to complete the profile for the staff member
+    completeProfileStaff: publicProcedure
+    .input(z.object(
+      {
+        firstName: z.string(),
+        lastName: z.string(),
+        email: z.string().email(),
+        phone: z.string(),
+        role: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
+        const res = await fetch(`${BASE_URL}/addProfileStaff`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${ctx.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(input),
+        });
+        const json = await res.json();
+        return json;
+      }),
 
     // this is to approve a user
   // calling this when the manager approves a user (from the admin dashboard)

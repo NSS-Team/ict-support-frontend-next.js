@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { userRoleEnum } from './enums';
+import { fi } from 'zod/v4/locales';
 
 export const UserSchema = z.object({
   id: z.string(),
-  fullName: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
   email: z.string().email(),
   officeNumber: z.string(),
   department: z.string(),
