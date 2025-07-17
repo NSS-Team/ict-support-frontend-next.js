@@ -24,7 +24,7 @@ const Navbar = () => {
 
         {/* Title */}
         <h1 className="text-xl font-semibold tracking-wide text-gray-800">
-          Complaint System
+          NSS
         </h1>
       </div>
 

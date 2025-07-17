@@ -28,6 +28,12 @@ const UserProfileForm = ({ initialUser, supportRoles, onSubmit }: Props) => {
           onSwitch={() => setIsSupportTeam(true)}
         />
       )}
+      {/*
+      if the result of login check is 
+      if the member is from support team then the support tema form will be rendered 
+      if the member is not from support team then the regular user form will be rendered
+       */}
+      
     </div>
   );
 };

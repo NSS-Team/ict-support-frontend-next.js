@@ -1,13 +1,18 @@
 'use client';
 import { useToast } from './_components/ToastProvider';
-import { useEffect } from 'react';
+import { use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, SignIn } from '@clerk/nextjs';
 import Loader from '~/app/_components/Loader';
 import { api } from '~/trpc/react';
+import { useUserStatus } from '~/store/loginCheck';
 
 
 export default function Home() {
+
+  // Zustand store for login check
+  const { setExist, setApproved } = useUserStatus();
+
   const { addToast } = useToast();
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
@@ -16,41 +21,50 @@ export default function Home() {
   const responseData = data?.data;
   // Handle navigation based on loginCheck data
   useEffect(() => {
+    
     if (data?.success) {
       if (responseData) {
         // if exists and not approved, redirect to complete profile
         if (!responseData.exist) {
+          
           router.push('/complete-profile');
+          setExist(false);
+          setApproved(false);
         } else if (!responseData.approved) {
+          setExist(true);
+          setApproved(false);
           router.push('/complete-profile');
-          addToast('Your account is not approved yet.');
+          
         }
         else if (responseData.approved) {
+          setExist(true);
+          setApproved(true);
           router.push('/dashboard');
         }
       }
     }
-  }, [data, router]);
+  }, [data, responseData, router]);
 
 
 
   if (!isLoaded || isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center mx-auto">
+      <div className="grid h-h-[calc(100vh-4rem)] place-items-center">
         <Loader />
       </div>
     );
   }
 
-  if (!isSignedIn || ( !responseData?.approved && responseData?.exist)) {
-    return (
-      <div className="main bg-white h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="signInContainer m-auto">
-          <SignIn routing="hash" />
-        </div>
+  if (!isSignedIn || (!responseData?.approved && responseData?.exist && !data?.success)) {
+  // Shows SignIn only if not signed in or loginCheck hasn't succeeded
+  return (
+    <div className="main bg-white h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="signInContainer m-auto">
+        <SignIn routing="hash" />
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return null;
 }

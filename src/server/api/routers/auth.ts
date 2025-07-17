@@ -39,7 +39,8 @@ export const authRouter = createTRPCRouter({
         locationId: z.string(),
         department: z.string(),
         designation: z.string(),
-        officeNumber: z.string()
+        officeNumber: z.string(),
+        picUrl: z.string().optional(),
       }
     ))
     .mutation(async ({ ctx, input }) => {
@@ -69,6 +70,7 @@ export const authRouter = createTRPCRouter({
         email: z.string().email(),
         phone: z.string(),
         role: z.string(),
+        teamId: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
         const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
