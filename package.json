@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/clerk-js": "^5.74.1",
     "@clerk/nextjs": "^6.24.0",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "^5.69.0",
@@ -23,8 +24,10 @@
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
     "framer-motion": "^12.23.3",
+    "html2canvas": "^1.4.1",
     "lucide-react": "^0.525.0",
     "next": "^15.2.3",
+    "radix-ui": "^1.4.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",

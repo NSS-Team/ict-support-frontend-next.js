@@ -10,7 +10,7 @@ const tabs = [
   { label: 'Past', icon: History },
 ];
 
-const DashboardTabs = () => {
+const TicketCategoryTabs = () => {
   const [activeTab, setActiveTab] = useState('Incoming');
   const [isMobile, setIsMobile] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -138,4 +138,4 @@ const DashboardTabs = () => {
   );
 };
 
-export default DashboardTabs;
+export default TicketCategoryTabs;

@@ -15,7 +15,8 @@ router.post('/update-password' , changePasswordAfterCodeLogin) //working
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 // schema imports 
-import {loginCheckResponseSchema } from "~/types/responseTypes/authResponses";
+import { generateCodesResponseSchema, loginCheckResponseSchema } from "~/types/responseTypes/authResponses";
+import { clerkClient } from "@clerk/nextjs/server";
 
 
 
@@ -25,7 +26,7 @@ import {loginCheckResponseSchema } from "~/types/responseTypes/authResponses";
 // this router handles all the authentication related operations
 export const authRouter = createTRPCRouter({
 
-  
+
 
   // this is to complete the profile of a user
   // this is called when a user signs in for the first time
@@ -55,14 +56,14 @@ export const authRouter = createTRPCRouter({
         },
         body: JSON.stringify(input),
       });
-      const json =  await res.json();
+      const json = await res.json();
       console.log(json)
       return json
     }),
 
 
-    // this is to complete the profile for the staff member
-    completeProfileStaff: publicProcedure
+  // this is to complete the profile for the staff member
+  completeProfileStaff: publicProcedure
     .input(z.object(
       {
         firstName: z.string(),
@@ -71,22 +72,28 @@ export const authRouter = createTRPCRouter({
         phone: z.string(),
         role: z.string(),
         teamId: z.string(),
+        picUrl: z.string().optional(),
       }))
-      .mutation(async ({ ctx, input }) => {
-        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
-        const res = await fetch(`${BASE_URL}/addProfileStaff`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${ctx.token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(input),
-        });
-        const json = await res.json();
-        return json;
-      }),
+    .mutation(async ({ ctx, input }) => {
+      const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
+      const res = await fetch(`${BASE_URL}/addProfileStaff`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${ctx.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error('Backend error:', err);
+        throw new Error(`Failed to submit profile: ${res.status}`);
+      }
+      const json = await res.json();
+      return json;
+    }),
 
-    // this is to approve a user
+  // this is to approve a user
   // calling this when the manager approves a user (from the admin dashboard)
   approveUser: publicProcedure
     .input(z.object({ id: z.string() }))
@@ -102,7 +109,7 @@ export const authRouter = createTRPCRouter({
     }),
 
 
-     // this is to login if the user forgots his password and uses the previously generated codes at the time of profile completion
+  // this is to login if the user forgots his password and uses the previously generated codes at the time of profile completion
   loginWithCode: publicProcedure
     .input(z.object({ code: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -169,13 +176,12 @@ export const authRouter = createTRPCRouter({
         Authorization: `Bearer ${ctx.token}`,
       },
     });
-    return await res.json();
+    
+    const json = await res.json();
+    console.log('generateCodes raw response:', json); // Add this for debugging
+    const validated = generateCodesResponseSchema.parse(json);
+    console.log('generateCodes response:', validated);
+    return validated;
   }),
-
-
-  
-
-
- 
 });
 

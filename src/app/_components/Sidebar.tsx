@@ -1,6 +1,6 @@
 'use client';
 
-import { Home,Users, UserPlus, UserCircle, LogOut, Bell,} from 'lucide-react';
+import { Home,Users, UserPlus, UserCircle, LogOut,} from 'lucide-react';
 import Link from 'next/link';
 import '~/styles/globals.css';
 
@@ -15,7 +15,7 @@ const navItems = [
 const Sidebar = () => {
   return (
     <aside
-      className="group w-15 hover:w-64 bg-[#f8f8f8] h-[90%] flex flex-col border-r transition-all duration-300"
+      className="group w-15 pl-3 pt-6 hover:w-64 bg-white h-min flex flex-col transition-all duration-300"
     >
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-2">

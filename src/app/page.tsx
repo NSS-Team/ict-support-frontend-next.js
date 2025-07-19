@@ -1,6 +1,6 @@
 'use client';
 import { useToast } from './_components/ToastProvider';
-import { use, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, SignIn } from '@clerk/nextjs';
 import Loader from '~/app/_components/Loader';
@@ -12,8 +12,6 @@ export default function Home() {
 
   // Zustand store for login check
   const { setExist, setApproved } = useUserStatus();
-
-  const { addToast } = useToast();
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
 
@@ -61,6 +59,7 @@ export default function Home() {
     <div className="main bg-white h-[calc(100vh-4rem)] flex items-center justify-center">
       <div className="signInContainer m-auto">
         <SignIn routing="hash" />
+        {/* <AuthModal open={true} onOpenChange={() => {}} /> */}
       </div>
     </div>
   );

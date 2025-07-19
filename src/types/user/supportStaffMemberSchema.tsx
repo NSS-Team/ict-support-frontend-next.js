@@ -6,6 +6,7 @@ export const supportStaffMemberSchema = baseUserSchema.extend({
     role: supportStaffRolesEnum,
     department: z.string(),
     teamId: z.string(),
+    picUrl: z.string().optional(),
 });
 
 export type SupportStaffMember = z.infer<typeof supportStaffMemberSchema>;

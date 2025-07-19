@@ -1,19 +1,15 @@
 'use client';
 
-import { use, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-
+import { useState } from 'react';
 import RegularUserForm from '../_components/userProfileForm/EmployeeForm';
 import SupportTeamForm from '../_components/userProfileForm/SupportTeamForm';
 import WaitingForApproval from '../_components/userProfileForm/waitingForApproval';
 
 import type { SupportStaffMember } from '~/types/user/supportStaffMemberSchema';
 import type { NustEmployee } from '~/types/user/nustEmployeeSchema';
-import type { User } from '~/types/user';
 import { supportStaffRolesEnum } from '~/types/enums';
 import { useUserStatus } from '~/store/loginCheck';
 import Loader from '../_components/Loader';
-import { hydrate } from '@tanstack/react-query';
 
 const defaultNustEmployee: NustEmployee = {
   id: '',
@@ -50,7 +46,7 @@ const UserProfileForm = () => {
 
   const [userType, setUserType] = useState<'employee' | 'support'>('employee');
 
-  const handleSubmit = (data: Partial<User>) => {
+  const handleSubmit = (data: Partial<SupportStaffMember | NustEmployee>) => {
     console.log('Form submitted:', data);
   };
 

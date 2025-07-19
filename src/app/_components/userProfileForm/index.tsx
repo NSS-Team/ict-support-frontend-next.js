@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import RegularUserForm from './EmployeeForm';
 import SupportTeamForm from './SupportTeamForm';
-import type { User } from '~/types/user';
 import { supportStaffRolesEnum, type supportStaffRoles } from '~/types/enums';
 import type { SupportStaffMember } from '~/types/user/supportStaffMemberSchema';
 import type { NustEmployee } from '~/types/user/nustEmployeeSchema';
@@ -11,7 +10,7 @@ import type { NustEmployee } from '~/types/user/nustEmployeeSchema';
 interface Props {
   initialUser: SupportStaffMember | NustEmployee;
   supportRoles: supportStaffRoles
-  onSubmit: (data: Partial<User>) => void;
+  onSubmit: (data: Partial<SupportStaffMember | NustEmployee>) => void;
 }
 
 const UserProfileForm = ({ initialUser, supportRoles, onSubmit }: Props) => {

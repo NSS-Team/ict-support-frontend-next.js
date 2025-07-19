@@ -10,7 +10,7 @@ import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { auth } from "@clerk/nextjs/server";
-
+import { clerkClient } from "@clerk/nextjs/server";
 /**
  * 1. CONTEXT
  *
@@ -29,11 +29,14 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   const { sessionId, userId, getToken } = await auth();
 
   const token = sessionId ? await getToken() : null;
+  const clerk = await clerkClient();
+  const user = userId ? await clerk.users.getUser(userId) : null;
 
   return {
     token,
     userId,
     sessionId,
+    user,
   };
 };
 /**

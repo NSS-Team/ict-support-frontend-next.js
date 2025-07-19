@@ -29,5 +29,10 @@ export const approveUserDataSchema = z.object({
 export type ApproveUserResponse = z.infer<typeof approveUserDataSchema>;
 export type approveUserResponse = z.infer<typeof approveUserDataSchema>;
 
-
-
+// generate codes response data schema
+export const generateCodesDataSchema = z.object({
+  codes: z.array(z.string()),
+});
+export const generateCodesResponseSchema = responseSchema(generateCodesDataSchema);
+export type GenerateCodesData = z.infer<typeof generateCodesDataSchema>;
+export type GenerateCodesResponse = z.infer<typeof generateCodesResponseSchema>;

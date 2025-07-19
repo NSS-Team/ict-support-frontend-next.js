@@ -9,6 +9,8 @@ import InputField from './InputField';
 import SelectField from './SelectField';
 import { useRouter } from 'next/navigation';
 import { useUserStatus } from '~/store/loginCheck';
+import { uploadProfileImage } from '~/utils/UploadProfileImage';
+import { UploadCloud } from "lucide-react";
 
 interface Props {
   initialUser: NustEmployee;
@@ -16,7 +18,7 @@ interface Props {
   onSwitch: () => void;
 }
 
-const RegularUserForm = ({ initialUser, onSubmit, onSwitch }: Props) => {
+const RegularUserForm = ({ initialUser, onSwitch }: Props) => {
   const { setExist, setApproved } = useUserStatus();
   const Router = useRouter();
   const { addToast } = useToast();
@@ -28,7 +30,7 @@ const RegularUserForm = ({ initialUser, onSubmit, onSwitch }: Props) => {
 
   const { user } = useUser(); // fetching the user from clerk
   const email = user?.emailAddresses[0]?.emailAddress ?? ''; // getting email from clerk user
-  const { data: locationResponse = [], isLoading: isLocationsLoading } = api.locations.getLocations.useQuery();
+  const { data: locationResponse = [] } = api.locations.getLocations.useQuery();
   const locationOptions = Array.isArray(locationResponse) ? [] : locationResponse?.data ?? [];
 
   const { mutate: completeProfile, isPending: isSubmitting } = api.auth.completeProfile.useMutation({
@@ -61,73 +63,68 @@ const RegularUserForm = ({ initialUser, onSubmit, onSwitch }: Props) => {
   };
 
   const handleFinalSubmit = async () => {
-  const isValid = validateStep();
-  if (!isValid) return;
+    const isValid = validateStep();
+    if (!isValid) return;
 
-  if (
-    !formData.firstName ||
-    !formData.lastName ||
-    !formData.phone ||
-    !email ||
-    !formData.locationId ||
-    !formData.designation ||
-    !formData.department ||
-    !formData.officeNumber
-  ) {
-    addToast('Please fill all required fields.');
-    return;
-  }
-
-  let imageUrl = '';
-
-  // If image selected, upload to Cloudinary
-  if (profileImage) {
-  try {
-    console.log('Uploading image:', profileImage);
-
-    const imageData = new FormData();
-    imageData.append('file', profileImage);
-    imageData.append('upload_preset', 'frontend'); 
-    imageData.append('folder', 'profile_pictures'); // Replace with your cloud name
-
-    console.log('FormData prepared:', Array.from(imageData.entries()));
-
-    const res = await fetch('https://api.cloudinary.com/v1_1/ddrcc3pf0/image/upload', {
-      method: 'POST',
-      body: imageData,
-    });
-
-    console.log('Cloudinary response status:', res.status);
-
-    const data = await res.json();
-    console.log('Cloudinary response data:', data);
-
-    imageUrl = data.secure_url;
-    if (!imageUrl) {
-      console.error('No secure_url returned from Cloudinary:', data);
-      addToast('Image upload failed: No URL returned!');
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.phone ||
+      !email ||
+      !formData.locationId ||
+      !formData.designation ||
+      !formData.department ||
+      !formData.officeNumber
+    ) {
+      addToast('Please fill all required fields.');
       return;
     }
-  } catch (error) {
-    console.error('Image upload failed:', error);
-    addToast('Image upload failed!');
-    return;
-  }
-}
 
-  // Submit profile with image URL
-  completeProfile({
-    firstName: formData.firstName,
-    lastName: formData.lastName,
-    email: email,
-    phone: formData.phone,
-    officeNumber: formData.officeNumber,
-    department: formData.department,
-    designation: formData.designation,
-    locationId: formData.locationId,
-    picUrl: imageUrl, // <-- send image URL here
-  });
-};
+    let imageUrl = '';
+
+    // If image selected, upload to Cloudinary
+    if (profileImage) {
+      try {
+        imageUrl = await uploadProfileImage(profileImage);
+      } catch (error) {
+        console.error('Image upload failed:', error);
+        addToast('Image upload failed! Only jpg, png, webp are allowed.');
+        return; // Prevent sending request to backend
+      }
+    }
+
+    try {
+      completeProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email,
+        phone: formData.phone,
+        officeNumber: formData.officeNumber,
+        department: formData.department,
+        designation: formData.designation,
+        locationId: formData.locationId,
+        picUrl: imageUrl, // safe to be empty if no image
+      });
+
+      addToast('Profile completed successfully!');
+    } catch (error) {
+      console.error('Profile submission failed:', error);
+      addToast('Something went wrong while submitting the profile.');
+    }
+
+    // Submit profile with image URL
+    // completeProfile({
+    //   firstName: formData.firstName,
+    //   lastName: formData.lastName,
+    //   email: email,
+    //   phone: formData.phone,
+    //   officeNumber: formData.officeNumber,
+    //   department: formData.department,
+    //   designation: formData.designation,
+    //   locationId: formData.locationId,
+    //   picUrl: imageUrl,
+    // });
+  };
 
 
   return (
@@ -144,17 +141,22 @@ const RegularUserForm = ({ initialUser, onSubmit, onSwitch }: Props) => {
             <InputField label="Department" name="department" value={formData.department || ''} onChange={handleChange} />
             <InputField label="Designation" name="designation" value={formData.designation || ''} onChange={handleChange} />
             <InputField label="Office Room No." name="officeNumber" value={formData.officeNumber || ''} onChange={handleChange} />
-            <label className="block text-sm font-medium text-gray-700">Profile Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setProfileImage(e.target.files?.[0] || null)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-            />
+            <div className="relative w-full mt-1">
+              <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-md shadow-sm bg-white text-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-200">
+                <UploadCloud className="w-5 h-5 text-blue-600" />
+                <span className="text-sm font-medium">Choose an image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setProfileImage(e.target.files?.[0] || null)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+              </label>
+            </div>
           </div>
 
           <div className="mt-8 text-right">
-            <button onClick={() => handleFinalSubmit()} className="px-6 py-2 bg-neutral-800 text-white rounded-md">Next</button>
+            <button onClick={() => handleFinalSubmit()} className="px-6 py-2 bg-neutral-800 text-white rounded-md">Submit for Approval</button>
           </div>
 
           <div className="text-sm text-center mt-4">
