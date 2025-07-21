@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Clock, User2, ChevronDown, ChevronUp, Router } from 'lucide-react';
+import { Clock, User2, ChevronDown, ChevronUp } from 'lucide-react';
 import '~/styles/globals.css';
 import type { ticket } from '~/types/tickets/ticket';
 import { useRouter } from 'next/navigation';
@@ -11,24 +11,22 @@ interface TicketProps {
 }
 
 const ComplaintCard = ({ ticket }: TicketProps) => {
-
   const Router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-const statusMap: Record<string, string> = {
-  waiting_assignment: "WAITING",
-  assigned: "ASSIGNED",
-  in_progress: "IN PROGRESS",
-  resolved: "RESOLVED",
-  closed: "CLOSED",
-  escalated_level_1: "ESCALATED LEVEL 1",
-  escalated_level_2: "ESCALATED LEVEL 2",
-};
-  
-const readableStatus = ticket?.status ? statusMap[ticket.status] : 'UNKNOWN';
+  const statusMap: Record<string, string> = {
+    waiting_assignment: 'WAITING',
+    assigned: 'ASSIGNED',
+    in_progress: 'IN PROGRESS',
+    resolved: 'RESOLVED',
+    closed: 'CLOSED',
+    escalated_level_1: 'ESCALATED LEVEL 1',
+    escalated_level_2: 'ESCALATED LEVEL 2',
+  };
 
-  // Detect screen size for mobile
+  const readableStatus = ticket?.status ? statusMap[ticket.status] : 'UNKNOWN';
+
   useEffect(() => {
     const checkScreen = () => setIsMobile(window.innerWidth < 640);
     checkScreen();
@@ -37,34 +35,37 @@ const readableStatus = ticket?.status ? statusMap[ticket.status] : 'UNKNOWN';
   }, []);
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto bg-white border border-gray-200 rounded-xl p-4 transition-all duration-300 mt-5">
+    <div className="relative w-full max-w-6xl mx-auto bg-white border border-gray-200 rounded-xl p-6 transition-all duration-300 mt-5">
       {/* Top Section */}
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="flex flex-col items-center min-w-[50px]">
-            <span className="text-xs text-gray-400 font-mono">#{ticket?.id}</span>
-            <span className="bg-gray-800 text-white text-[10px] font-semibold rounded px-2 py-0.5 mt-1">
+            <span className="text-sm text-gray-400 font-mono">#{ticket?.id}</span>
+            <span className="bg-gray-800 text-white text-xs font-semibold rounded px-2 py-0.5 mt-1">
               {readableStatus}
             </span>
           </div>
 
           <div>
-            <h2 className="font-semibold text-lg text-gray-900 hover:text-blue-600 cursor-pointer" onClick={() => 
-                    Router.push(`/ticket/${ticket?.id}`)
-                } >{ticket?.title}</h2>
-            <div className="flex items-center text-gray-600 text-sm gap-1 mt-1">
-              <User2 className="w-4 h-4" />
+            <h2
+              className="font-semibold text-2xl text-gray-900 hover:text-blue-600 cursor-pointer"
+              onClick={() => Router.push(`/ticket/${ticket?.id}`)}
+            >
+              {ticket?.title}
+            </h2>
+            <div className="flex items-center text-gray-600 text-base gap-1 mt-2">
+              <User2 className="w-5 h-5" />
               {ticket?.employeeName}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col items-end text-sm">
+        <div className="flex flex-col items-end text-base">
           <div className="flex items-center text-gray-500 gap-1">
-            <Clock className="w-4 h-4" />
-            <span>07/07</span>
+            <Clock className="w-5 h-5" />
+            <span>{ticket?.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : 'UNKNOWN'}</span>
           </div>
-          <div className="bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded mt-1 shadow-sm">
+          <div className="bg-red-600 text-white text-sm font-bold px-3 py-1 rounded mt-1 shadow-sm">
             {ticket?.priority.toUpperCase()}
           </div>
         </div>
@@ -72,20 +73,16 @@ const readableStatus = ticket?.status ? statusMap[ticket.status] : 'UNKNOWN';
 
       {/* Mobile Dropdown Toggle */}
       {isMobile && (
-        <div className="flex justify-center mt-2">
+        <div className="flex justify-center mt-3">
           <button onClick={() => setIsExpanded(!isExpanded)} className="text-gray-500">
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5" />
-            ) : (
-              <ChevronDown className="w-5 h-5" />
-            )}
+            {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
         </div>
       )}
 
       {/* Details Section */}
       <div
-        className={`grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-gray-600 mt-4 transition-all duration-300 ease-in-out
+        className={`grid grid-cols-2 sm:grid-cols-4 gap-6 text-sm text-gray-700 mt-6 transition-all duration-300 ease-in-out
         ${
           isMobile
             ? isExpanded
@@ -95,20 +92,20 @@ const readableStatus = ticket?.status ? statusMap[ticket.status] : 'UNKNOWN';
         }`}
       >
         <div>
-          <span className="block font-semibold text-gray-500">Worker</span>
-          <span className="text-gray-700">NOT ASSIGNED</span>
+          <span className="block font-semibold text-gray-600">Worker</span>
+          <span className="text-gray-800">{ticket?.assignedWorker || 'NOT ASSIGNED'}</span>
         </div>
         <div>
-          <span className="block font-semibold text-gray-500">Preferred Mode</span>
-          <span className="text-black font-medium">OnSite</span>
+          <span className="block font-semibold text-gray-600">Preferred Mode</span>
+          <span className="text-black font-medium">{ticket?.submissionPreference || 'NOT ASSIGNED'}</span>
         </div>
         <div>
-          <span className="block font-semibold text-gray-500">Category</span>
-          <span className="text-gray-700">NOT ASSIGNED</span>
+          <span className="block font-semibold text-gray-600">Category</span>
+          <span className="text-gray-800">{ticket?.categoryName || 'NOT ASSIGNED'}</span>
         </div>
         <div>
-          <span className="block font-semibold text-gray-500">Subcategory</span>
-          <span className="text-gray-700">NOT ASSIGNED</span>
+          <span className="block font-semibold text-gray-600">Subcategory</span>
+          <span className="text-gray-800">{ticket?.subCategoryName || 'NOT ASSIGNED'}</span>
         </div>
       </div>
     </div>

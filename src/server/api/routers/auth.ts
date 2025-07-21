@@ -161,6 +161,7 @@ export const authRouter = createTRPCRouter({
     });
 
     const json = await res.json();
+    console.log('loginCheck raw response:', json); // Add this for debugging
     const validated = loginCheckResponseSchema.parse(json);
     console.log('loginCheck response:', validated);
     return validated;

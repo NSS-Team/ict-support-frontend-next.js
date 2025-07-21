@@ -9,15 +9,20 @@ export const ticketSchema = z.object({
   employeeName: z.string().max(150),
   categoryId: z.number(),
   subCategoryId: z.number(),
-  issueOptionId: z.number(),
-  customDescription: z.string().optional().nullable(),
-  device: z.string().optional().nullable(),
   submissionPreference: submissionPreferenceEnum,
   status: complaintStatusEnum,
   priority: priorityEnum,
   assignedWorker: z.string().optional().nullable(),
   createdAt: z.string(),
-  updatedAt: z.string(),
+  categoryName: z.string(),
+  subCategoryName: z.string(),
+  // issueOptionId: z.number(),
+  // customDescription: z.string().optional().nullable(),
+  // device: z.string().optional().nullable(),
+  // issueOptionName: z.string(),
+  // escalationLevel: z.number().min(0).max(3).optional().nullable(),
+  // teamId: z.number().min(1),
+  
 });
 
 export default ticketSchema;

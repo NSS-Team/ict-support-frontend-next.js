@@ -4,6 +4,8 @@ import { getComplainsEmpResponseSchema, getComplainsWorkerResponseSchema } from 
 export const dashRouter = createTRPCRouter({
 
 
+  // get the complains of the employee
+  // this will be used by the employee to see all the complaints they have created
   getComplainsEmp: publicProcedure
     .query(async ({ ctx }) => {
       const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/dash`;
@@ -19,6 +21,8 @@ export const dashRouter = createTRPCRouter({
         return validated;
     }),
 
+    // get the complains of the worker
+    // this will be used by the worker to see the complaints assigned to them
     getComplainsWorker: publicProcedure
     .query(async ({ ctx }) => {
         const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/dash`;

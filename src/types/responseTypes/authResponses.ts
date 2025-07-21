@@ -1,13 +1,16 @@
 // this file contains the type decalarations for the auth responses using zod
 import { z } from 'zod';
 import { responseSchema } from '~/lib/responseSchema';
+import { userRolesEnum } from '../enums';
 
 
 // login-check response data schema 
 export const loginCheckDataSchema = z.object({
   exist: z.boolean(),
   approved: z.boolean(),
+  role: userRolesEnum,
 });
+
 export const loginCheckResponseSchema = responseSchema(loginCheckDataSchema);
 export type LoginCheckData = z.infer<typeof loginCheckDataSchema>;
 export type LoginCheckResponse = z.infer<typeof loginCheckResponseSchema>;

@@ -1,17 +1,18 @@
 'use client';
-import { useToast } from './_components/ToastProvider';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, SignIn } from '@clerk/nextjs';
 import Loader from '~/app/_components/Loader';
 import { api } from '~/trpc/react';
 import { useUserStatus } from '~/store/loginCheck';
+import type { UserRoles } from '~/types/enums';
 
 
 export default function Home() {
 
   // Zustand store for login check
   const { setExist, setApproved } = useUserStatus();
+  const [role, setRole] = useState<UserRoles | undefined>();
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
 
@@ -21,6 +22,8 @@ export default function Home() {
   useEffect(() => {
     
     if (data?.success) {
+      const role = responseData?.role;
+      setRole(role);
       if (responseData) {
         // if exists and not approved, redirect to complete profile
         if (!responseData.exist) {
@@ -37,7 +40,23 @@ export default function Home() {
         else if (responseData.approved) {
           setExist(true);
           setApproved(true);
-          router.push('/dashboard');
+          // Redirect based on role
+          if (role === 'admin') {
+            router.push('/dashboard/admin');
+          }
+          else if (role === 'manager') {
+            router.push('/dashboard/manager');
+          }
+          else if (role === 'employee') {
+            router.push('/dashboard/employee');
+          }
+          else if (role === 'worker') {
+            router.push('/dashboard/worker');
+          } 
+          else {
+            console.error('Unknown role:', role);
+            // Optionally handle unknown roles
+          }
         }
       }
     }
