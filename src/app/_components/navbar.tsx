@@ -10,7 +10,7 @@ import '~/styles/globals.css'; // Ensure global styles are imported
 
 const Navbar = () => {
   return (
-    <header className="w-full h-16 bg-white shadow-md px-6 flex items-center justify-between border-b border-gray-200">
+    <header className="w-full h-16 bg-white px-6 flex items-center justify-between border-b border-gray-200">
       {/* Left Section */}
       <div className="flex items-center gap-3">
         {/* Logo */}
@@ -37,7 +37,7 @@ const Navbar = () => {
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
           </div>
 
-          {/* User Profile */}
+          {/* User Profile
           <UserButton
             afterSignOutUrl="/"
             appearance={{
@@ -45,7 +45,7 @@ const Navbar = () => {
                 avatarBox: "ring-2 ring-blue-500 hover:ring-offset-2 transition-all duration-200",
               },
             }}
-          />
+          /> */}
         </SignedIn>
       </div>
     </header>

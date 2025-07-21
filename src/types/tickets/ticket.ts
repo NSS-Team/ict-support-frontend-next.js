@@ -1,8 +1,8 @@
 import {z} from "zod";
-import {submissionPreferenceEnum, complaintStatusEnum, priorityEnum} from "./enums";
+import {submissionPreferenceEnum, complaintStatusEnum, priorityEnum} from "../enums";
 
 
-export const complaintSchema = z.object({
+export const ticketSchema = z.object({
   id: z.number(),
   title: z.string().max(200),
   employeeId: z.string().min(1),
@@ -16,8 +16,10 @@ export const complaintSchema = z.object({
   status: complaintStatusEnum,
   priority: priorityEnum,
   assignedWorker: z.string().optional().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
-export type Complaint = z.infer<typeof complaintSchema>;
+export default ticketSchema;
+
+export type ticket = z.infer<typeof ticketSchema>;

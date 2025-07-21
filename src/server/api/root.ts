@@ -2,6 +2,8 @@ import { authRouter } from "~/server/api/routers/auth";
 import { locationsRouter } from "~/server/api/routers/locations";
 import { teamsRouter } from "./routers/team";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import { dashRouter } from "./routers/dash";
+import { complaintsRouter } from "./routers/complaints";
 
 /**
  * This is the primary router for your server.
@@ -10,8 +12,11 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   auth: authRouter,
+  complaints: complaintsRouter,
   locations : locationsRouter,
   teams: teamsRouter,
+  dash: dashRouter,
+  
 });
 
 

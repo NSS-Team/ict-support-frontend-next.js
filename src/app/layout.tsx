@@ -7,6 +7,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import {TRPCReactProvider} from '~/trpc/react'
 import '~/styles/globals.css'
 import { ToastProvider } from './_components/ToastProvider'
+import Footer from './_components/footer/footer'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -38,6 +39,7 @@ export default function RootLayout({
           <ToastProvider>
           <Navbar />
           {children}
+          <Footer />
           </ToastProvider>
           </TRPCReactProvider>
         </body>

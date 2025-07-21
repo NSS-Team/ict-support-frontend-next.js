@@ -45,7 +45,7 @@ const TicketCategoryTabs = () => {
   }, [activeTab, isMobile]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4">
+    <div className="w-full max-w-6xl mx-auto px-20 py-6">
       {/* Mobile View */}
       {isMobile ? (
         <div className="relative w-full border border-gray-300 rounded-md bg-white overflow-hidden">

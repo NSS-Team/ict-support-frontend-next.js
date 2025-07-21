@@ -1,12 +1,32 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Clock, User2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, User2, ChevronDown, ChevronUp, Router } from 'lucide-react';
 import '~/styles/globals.css';
+import type { ticket } from '~/types/tickets/ticket';
+import { useRouter } from 'next/navigation';
 
-const ComplaintCard = () => {
+interface TicketProps {
+  ticket?: ticket;
+}
+
+const ComplaintCard = ({ ticket }: TicketProps) => {
+
+  const Router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+const statusMap: Record<string, string> = {
+  waiting_assignment: "WAITING",
+  assigned: "ASSIGNED",
+  in_progress: "IN PROGRESS",
+  resolved: "RESOLVED",
+  closed: "CLOSED",
+  escalated_level_1: "ESCALATED LEVEL 1",
+  escalated_level_2: "ESCALATED LEVEL 2",
+};
+  
+const readableStatus = ticket?.status ? statusMap[ticket.status] : 'UNKNOWN';
 
   // Detect screen size for mobile
   useEffect(() => {
@@ -17,22 +37,24 @@ const ComplaintCard = () => {
   }, []);
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-all duration-300">
+    <div className="relative w-full max-w-6xl mx-auto bg-white border border-gray-200 rounded-xl p-4 transition-all duration-300 mt-5">
       {/* Top Section */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-center min-w-[50px]">
-            <span className="text-xs text-gray-400 font-mono">#6969</span>
+            <span className="text-xs text-gray-400 font-mono">#{ticket?.id}</span>
             <span className="bg-gray-800 text-white text-[10px] font-semibold rounded px-2 py-0.5 mt-1">
-              CLOSED
+              {readableStatus}
             </span>
           </div>
 
           <div>
-            <h2 className="font-semibold text-lg text-gray-900">Complaint header</h2>
+            <h2 className="font-semibold text-lg text-gray-900 hover:text-blue-600 cursor-pointer" onClick={() => 
+                    Router.push(`/ticket/${ticket?.id}`)
+                } >{ticket?.title}</h2>
             <div className="flex items-center text-gray-600 text-sm gap-1 mt-1">
               <User2 className="w-4 h-4" />
-              Ibsham Tariq
+              {ticket?.employeeName}
             </div>
           </div>
         </div>
@@ -43,7 +65,7 @@ const ComplaintCard = () => {
             <span>07/07</span>
           </div>
           <div className="bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded mt-1 shadow-sm">
-            ⛔ HIGH
+            {ticket?.priority.toUpperCase()}
           </div>
         </div>
       </div>
