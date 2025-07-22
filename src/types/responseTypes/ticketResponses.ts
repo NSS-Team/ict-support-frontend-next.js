@@ -12,3 +12,9 @@ export const getComplainInfoDataObjectSchema = z.object({
 
 // Schema for the response of 'getComplainInfo' API
 export const getComplainInfoResponseSchema = responseSchema(getComplainInfoDataObjectSchema);
+
+export const generateComplainDataSchema = z.object({
+    complainId: z.number(),
+});
+
+export const generateComplainResponseSchema = responseSchema(generateComplainDataSchema);

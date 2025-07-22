@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
 export const categorySchema = z.object({
-    id: z.string(),
+    id: z.number(),
     name: z.string(),
 });
+
+// type of category schema 
+
 

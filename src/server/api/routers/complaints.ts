@@ -1,34 +1,38 @@
+import { title } from "process";
 import { createTRPCRouter } from "../trpc";
 import { publicProcedure } from "../trpc";
 import { z } from "zod";
+import { priorityEnum, submissionPreferenceEnum } from "~/types/enums";
 import { getCategoryResponseSchema } from "~/types/responseTypes/categories";
 import { getComplainInfoResponseSchema } from "~/types/responseTypes/ticketResponses";
+import { attachmentSchema } from "~/types/attachments";
+import { generateComplainResponseSchema } from "~/types/responseTypes/ticketResponses";
 
 export const complaintsRouter = createTRPCRouter({
 
     // get all categories
     getCategories: publicProcedure.query(async ({ ctx }) => {
-        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complaints`;
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
         const res = await fetch(`${BASE_URL}/getCategories`, {
             headers: {
                 'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
             },
         });
         const json = await res.json();
         console.log("raw response", json);
-        const validated = z.array(getCategoryResponseSchema).parse(json);
+        const validated = getCategoryResponseSchema.parse(json);
         console.log("validated response", validated);
         return validated;
     }),
 
     // get subcategories by category ID
-    getSubCategories: publicProcedure
-        .input(z.object({ categoryId: z.string() }))
-        .query(async ({ ctx, input }) => {
-            const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complaints`;
+    getSubCategories: publicProcedure.input(z.object({ categoryId: z.string() })).query(async ({ ctx, input }) => {
+            const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
             const res = await fetch(`${BASE_URL}/getSubCategories/${input.categoryId}`, {
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${ctx.token}`,
                 },
             });
             const json = await res.json();
@@ -37,13 +41,12 @@ export const complaintsRouter = createTRPCRouter({
         }),
 
     // get issue options by subcategory ID
-    getIssueOptions: publicProcedure
-        .input(z.object({ subCategoryId: z.string() }))
-        .query(async ({ ctx, input }) => {
-            const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complaints`;
-            const res = await fetch(`${BASE_URL}/getIssueOptions/${input.subCategoryId}`, {
-                headers: {
+    getIssueOptions: publicProcedure.input(z.object({ subCategoryId: z.string() })).query(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/getIssueOption/${input.subCategoryId}`, {
+            headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${ctx.token}`,
                 },
             });
             const json = await res.json();
@@ -52,13 +55,11 @@ export const complaintsRouter = createTRPCRouter({
         }),
 
     // get complaint info by complaint ID
-    getComplainInfo: publicProcedure
-        .input(z.object({ id: z.string() }))
-        .query(async ({ ctx, input }) => {
-            const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
-            const res = await fetch(`${BASE_URL}/getComplainInfo/${input.id}`, {
-                headers: {
-                    Authorization: `Bearer ${ctx.token}`,
+    getComplainInfo: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/getComplainInfo/${input.id}`, {
+            headers: {
+                Authorization: `Bearer ${ctx.token}`,
                 },
                 cache: "no-store",
             });
@@ -68,5 +69,34 @@ export const complaintsRouter = createTRPCRouter({
             console.log("validated response of complaint info", validated);
             return validated;
         }),
-});
 
+
+    // registrering a new complaint 
+    generateComplain: publicProcedure.input(z.object({
+        categoryId: z.string(),
+        subCategoryId: z.string(),
+        issueOptionId: z.string(),
+        customDescription: z.string().optional(),
+        submissionPreference: submissionPreferenceEnum,
+        priority: priorityEnum,
+        title: z.string().min(1, "Title is required"),
+        device: z.string().min(1, "Device is required"),
+        uploads: z.array(attachmentSchema).optional().default([]),
+    })).mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/generate`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
+            },
+            body: JSON.stringify(input),
+        });
+        const json = await res.json();
+        console.log("raw response of generate complain", json);
+        const validated = generateComplainResponseSchema.parse(json);
+        console.log("validated response of generate complain", validated);
+        return validated;
+    }),
+
+});
