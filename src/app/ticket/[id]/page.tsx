@@ -8,10 +8,14 @@ import Loader from '~/app/_components/Loader';
 import { File } from 'lucide-react';
 import { priorityColorMap } from '~/lib/PriorityColorMap';
 import { complaintStatusColorMap } from '~/lib/statusColorMap';
+import PopupImageViewer from '~/app/_components/PopupImageViewer';
+import { useState } from 'react';
 
 export default function TicketDetailPage() {
   const router = useRouter();
   const params = useParams();
+
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const id = typeof params.id === 'string' ? params.id : '';
 
   const { data: ticket, isLoading, error } = api.complaints.getComplainInfo.useQuery({ id });
@@ -51,6 +55,10 @@ export default function TicketDetailPage() {
     );
   }
 
+
+  const handleImageClick = (url: string) => {
+    setSelectedImage(url);
+  };
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Mobile-First Header */}
@@ -138,13 +146,13 @@ export default function TicketDetailPage() {
               <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:overflow-visible sm:flex-wrap -mx-1 px-1">
                 <div className="flex items-center gap-2 whitespace-nowrap">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Priority</span>
-                  <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${priorityColorMap[complaint?.priority?.toLowerCase() ?? ''] || priorityColorMap.default}`}>
+                  <span className={`inline-flex text-white items-center px-3 py-1 text-xs font-semibold rounded-full ${priorityColorMap[complaint?.priority?.toLowerCase() ?? ''] || priorityColorMap.default}`}>
                     {complaint?.priority}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 whitespace-nowrap">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
-                  <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${complaintStatusColorMap[complaint?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default}`}>
+                  <span className={`inline-flex text-white items-center px-3 py-1 text-xs font-semibold rounded-full ${complaintStatusColorMap[complaint?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default}`}>
                     {complaint?.status}
                   </span>
                 </div>
@@ -245,6 +253,7 @@ export default function TicketDetailPage() {
                         <div
                           key={index}
                           className="group relative rounded-lg border border-gray-200 overflow-hidden bg-gray-50 hover:shadow-md transition-all duration-200"
+                          onClick={() => isImage && handleImageClick(url)}
                         >
                           {isImage ? (
                             <div className="relative">
@@ -356,6 +365,15 @@ export default function TicketDetailPage() {
                 </button>
               </div>
             </div>
+
+            {/* Popup Image Viewer */}
+            {selectedImage && (
+        <PopupImageViewer
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
+
           </div>
         </div>
       </main>

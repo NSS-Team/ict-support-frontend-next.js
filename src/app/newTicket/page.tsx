@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '~/trpc/react'; 
 import Sidebar from '../_components/Sidebar';
-import { priorityEnum, submissionPreferenceEnum } from '~/types/enums';
+import { priorityEnum, submissionPreferenceEnum, type SubmissionPreference } from '~/types/enums';
 import { uploadAttachment } from '~/utils/complaintAttachmentsUpload';
 
 export default function ComplaintForm() {
