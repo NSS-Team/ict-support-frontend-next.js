@@ -1,4 +1,7 @@
+import { stat } from "fs";
 import {z} from "zod";
+import { responseSchema } from "~/lib/responseSchema";
+import { teamWorkerStatusEnum } from "../enums";
 
 export const getTeamDataSchema = z.object({
     id: z.string(),
@@ -14,5 +17,31 @@ export const getTeamResponseSchema = z.object({
     success: z.boolean(),
 });
 
+export const getTeamWorkersDataSchema = z.object({
+    workers : z.array(z.object({
+    workerId: z.number(),
+    workerUserId: z.string(),
+    teamId: z.number(),
+    workerName: z.string(),
+    status: teamWorkerStatusEnum,
+    })),
+});
+
+export const getTeamsDataSchema = z.object({
+ teams: z.array(z.object({
+    id: z.number(),
+    name: z.string(),
+    managerId: z.number().nullable(),
+    managerName: z.string().nullable(),
+})) });
+
+
+export const getTeamsResponseSchema = responseSchema(getTeamsDataSchema);
+export const getTeamWorkersResponseSchema = responseSchema(getTeamWorkersDataSchema);
+
 export type GetTeamResponse = z.infer<typeof getTeamResponseSchema>;
 export type GetTeamData = z.infer<typeof getTeamDataSchema>;
+export type GetTeamWorkersResponse = z.infer<typeof getTeamWorkersResponseSchema>;
+export type GetTeamWorkersData = z.infer<typeof getTeamWorkersDataSchema>;
+export type GetTeamsResponse = z.infer<typeof getTeamsResponseSchema>;
+export type GetTeamsData = z.infer<typeof getTeamsDataSchema>;

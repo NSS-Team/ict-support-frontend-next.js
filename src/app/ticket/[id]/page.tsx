@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, User, MapPin, Clock, FileText, Paperclip, AlertTriangle, Settings, Trash2, MoreVertical, Edit3, MessageSquare, Eye } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, FileText, Paperclip, AlertTriangle, Settings, Trash2, MoreVertical, Edit3, MessageSquare, Eye, Send } from 'lucide-react';
 import { api } from '~/trpc/react';
 import { format } from 'date-fns';
 import Loader from '~/app/_components/Loader';
@@ -10,6 +10,8 @@ import { priorityColorMap } from '~/lib/PriorityColorMap';
 import { complaintStatusColorMap } from '~/lib/statusColorMap';
 import PopupImageViewer from '~/app/_components/PopupImageViewer';
 import { useState } from 'react';
+import MyTeamPopup from '~/app/_components/teams/myTeamPopups';
+import ForwardTeamPopup from '~/app/_components/teams/forwardComplaintPopup';
 
 export default function TicketDetailPage() {
   const router = useRouter();
@@ -17,10 +19,12 @@ export default function TicketDetailPage() {
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const id = typeof params.id === 'string' ? params.id : '';
-
+  const [isMyTeamPopupOpen, setIsMyTeamPopupOpen] = useState(false);
+  const [isForwardTeamPopupOpen, setIsForwardTeamPopupOpen] = useState(false);
   const { data: ticket, isLoading, error } = api.complaints.getComplainInfo.useQuery({ id });
   const complaint = ticket?.data?.complaint;
   const attachments = ticket?.data?.attachments || [];
+  
 
   if (isLoading) {
     return (
@@ -32,7 +36,7 @@ export default function TicketDetailPage() {
       </div>
     );
   }
-  
+
   if (error || !ticket) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -44,7 +48,7 @@ export default function TicketDetailPage() {
             <span className="font-semibold">Unable to Load Ticket</span>
           </div>
           <p className="text-gray-600 mb-6">We encountered an error while loading the ticket details. Please try refreshing the page or contact support if the issue persists.</p>
-          <button 
+          <button
             onClick={() => router.back()}
             className="w-full px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors"
           >
@@ -81,16 +85,22 @@ export default function TicketDetailPage() {
                 <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Support Request Details</p>
               </div>
             </div>
-            
+
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center space-x-3">
               <button className="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
                 <Clock className="h-4 w-4 mr-2" />
                 Close Ticket
               </button>
-              <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+              <button className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                onClick={() => setIsMyTeamPopupOpen(true)}
+              >
                 <User className="h-4 w-4 mr-2" />
                 Assign
+              </button>
+              <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => {setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...');}}>
+                <Send className="h-4 w-4 mr-2" />
+                Forward Complaint
               </button>
               <button className="inline-flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
                 <Edit3 className="h-4 w-4 mr-2" />
@@ -140,7 +150,7 @@ export default function TicketDetailPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Status Pills - Mobile Scrollable */}
             <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-100 w-full">
               <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:overflow-visible sm:flex-wrap -mx-1 px-1">
@@ -171,7 +181,7 @@ export default function TicketDetailPage() {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
           {/* Main Content - Full width on mobile, 2/3 on desktop */}
           <div className="xl:col-span-2 space-y-6">
-            
+
             {/* Quick Stats - Mobile Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -189,7 +199,7 @@ export default function TicketDetailPage() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-50 rounded-lg">
@@ -290,7 +300,7 @@ export default function TicketDetailPage() {
 
           {/* Sidebar - Stack on mobile */}
           <div className="space-y-6">
-            
+
             {/* Contact Information */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
               <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
@@ -368,11 +378,16 @@ export default function TicketDetailPage() {
 
             {/* Popup Image Viewer */}
             {selectedImage && (
-        <PopupImageViewer
-          imageUrl={selectedImage}
-          onClose={() => setSelectedImage(null)}
-        />
-      )}
+              <PopupImageViewer
+                imageUrl={selectedImage}
+                onClose={() => setSelectedImage(null)}
+              />
+            )}
+
+            {/* My Team Popup */}
+            <MyTeamPopup open={isMyTeamPopupOpen} setOpen={setIsMyTeamPopupOpen} />
+
+            <ForwardTeamPopup open={isForwardTeamPopupOpen} setOpen={setIsForwardTeamPopupOpen} />
 
           </div>
         </div>

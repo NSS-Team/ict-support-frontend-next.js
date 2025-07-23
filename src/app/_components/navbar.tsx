@@ -3,7 +3,7 @@
 import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { Bell, User, Settings, LogOut, Check, X, Clock, AlertCircle } from 'lucide-react';
-import Image from 'next/image';
+import { SignOutButton } from '@clerk/nextjs';
 
 // Mock notifications data
 const mockNotifications: Notification[] = [
@@ -76,10 +76,10 @@ const Navbar = () => {
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
-      notificationRef.current &&
-      !(notificationRef.current as HTMLDivElement).contains(event.target as Node)
+        notificationRef.current &&
+        !(notificationRef.current as HTMLDivElement).contains(event.target as Node)
       ) {
-      setIsNotificationOpen(false);
+        setIsNotificationOpen(false);
       }
     };
 
@@ -108,7 +108,7 @@ const Navbar = () => {
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(notif => ({ ...notif, read: true }))
     );
   };
@@ -157,7 +157,7 @@ const Navbar = () => {
           <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">N</span>
           </div>
-          
+
           {/* Title */}
           <div>
             <h1 className="text-xl font-bold text-gray-900">NSS</h1>
@@ -208,13 +208,12 @@ const Navbar = () => {
                   notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors duration-150 border-l-4 ${getPriorityColor(notification.priority)} ${
-                        !notification.read ? 'bg-blue-50/30' : ''
-                      }`}
+                      className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors duration-150 border-l-4 ${getPriorityColor(notification.priority)} ${!notification.read ? 'bg-blue-50/30' : ''
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         {getNotificationIcon(notification.type, notification.priority)}
-                        
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <p className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
@@ -259,6 +258,18 @@ const Navbar = () => {
             </div>
           )}
         </div>
+
+        <div className="relative">
+          <SignOutButton>
+            <button
+              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4 text-gray-600" />
+            </button>
+          </SignOutButton>
+        </div>
+
 
         {/* User Button Placeholder */}
         <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">

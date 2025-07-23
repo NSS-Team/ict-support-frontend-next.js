@@ -8,21 +8,44 @@ import Sidebar from '~/app/_components/Sidebar';
 import { api } from '~/trpc/react';
 import SecurityCodeHandler from "~/app/_components/securityCodes/SecurityCodesPopupHandler";
 import TicketsOnDash from "~/app/_components/tickets/TicketsOnDash";
+import { useUser } from "@clerk/nextjs";
 
 export default function EmployeePage() {
   const { showModal, setShowModal, isError, codes, retry, userLoaded,
   } = useSecurityCodes();
-  const [showNewTicketModal, setShowTicketModal] = useState(true);
 
 
   // here we will make an api call to get the complaints created by the employee
   const { data: tickets, isLoading: ticketsLoading, error: ticketsError } = api.dash.getComplainsEmp.useQuery();
 
-  if (!userLoaded) {
+  //   this verifies if the user has the right permissions to access this page
+  const { user } = useUser();
+    if (!userLoaded) {
     return <div className="flex min-h-screen items-center justify-center">
       <Loader />
+      <p className="text-gray-500 pl-5">Please wait, while we authorize you...</p>
     </div>;
-  }
+    }
+
+    if(!user) {
+        return <div className="flex h-screen items-center justify-center bg-black">
+            <div className="justify-center items-center text-center p-20">
+            <p className="text-white text-xl font-bold ">Error | user not found</p>
+            </div>
+        </div>;
+    }
+
+    if(user.publicMetadata.role !== 'employee') {
+      
+      console.log(user.publicMetadata.role);
+
+        return <div className="flex h-screen items-center justify-center bg-black">
+            <div className="justify-center items-center text-center p-20">
+            <p className="text-white text-xl font-bold ">Unauthorized | You do not have permission to access this page.</p>
+            </div>
+        </div>;
+    }
+
   return (
     <div className="flex min-h-screen w-screen">
       <Sidebar />

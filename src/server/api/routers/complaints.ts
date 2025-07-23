@@ -99,4 +99,25 @@ export const complaintsRouter = createTRPCRouter({
         return validated;
     }),
 
+    // assign complaint to a worker 
+    assignComplainToWorker: publicProcedure.input(z.object({
+        workerId: z.string(),
+        complaintId: z.string(),
+    })).mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/assignToWorker`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
+            },
+            body: JSON.stringify(input),
+        });
+        const json = await res.json();
+        console.log("raw response of assign complain to worker", json);
+                    // const validated = assignComplainToWorkerResponseSchema.parse(json);
+                    // console.log("validated response of assign complain to worker", validated);
+        return json;
+    }),
+
 });
