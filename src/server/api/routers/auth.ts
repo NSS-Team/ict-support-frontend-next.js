@@ -9,25 +9,15 @@ router.post('/login-with-code', loginWithCode); // working
 router.post('/update-password' , changePasswordAfterCodeLogin) //working
 
 */
-
-
 // imports
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 // schema imports 
 import { generateCodesResponseSchema, loginCheckResponseSchema } from "~/types/responseTypes/authResponses";
-import { clerkClient } from "@clerk/nextjs/server";
-
-
-
-
 
 // the auth router
 // this router handles all the authentication related operations
-export const authRouter = createTRPCRouter({
-
-
-
+export const authRouter = createTRPCRouter({  
   // this is to complete the profile of a user
   // this is called when a user signs in for the first time
   completeProfile: publicProcedure
@@ -60,7 +50,6 @@ export const authRouter = createTRPCRouter({
       console.log(json)
       return json
     }),
-
 
   // this is to complete the profile for the staff member
   completeProfileStaff: publicProcedure

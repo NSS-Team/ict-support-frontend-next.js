@@ -52,6 +52,7 @@ export default function ComplaintForm() {
   const issueOptions = issues?.data?.issueOptions || [];
   const handleBack = () => {
     router.back();
+    router.refresh();
   };
 
   // api call for the complaint generation
