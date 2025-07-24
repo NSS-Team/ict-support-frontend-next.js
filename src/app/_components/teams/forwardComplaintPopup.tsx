@@ -5,16 +5,28 @@ import { Dialog } from '@headlessui/react';
 import { api } from '~/trpc/react';
 import { Users, X, ShieldCheck, MessageSquare } from 'lucide-react';
 import type { Team } from '~/types/teams/team';
+import { useToast } from '../ToastProvider';
 
 interface ForwardTeamPopupProps {
   open: boolean;
   setOpen: (value: boolean) => void;
+  complainId: string; // Optional, if you want to use this in the future
 }
 
-export default function ForwardTeamPopup({ open, setOpen }: ForwardTeamPopupProps) {
+export default function ForwardTeamPopup({ open, setOpen, complainId }: ForwardTeamPopupProps) {
+
+  const toast = useToast();
+
   const { data: getTeamsResponse, isLoading: teamsLoading, isError: getTeamsError } = api.teams.getTeams.useQuery();
   const teams = getTeamsResponse?.data?.teams || [];
-  
+  const forwardComplaint = api.complaints.forwardComplainToTeam.useMutation({
+    onSuccess: () => {
+      // Show success toast
+      console.log('Complaint forwarded successfully');
+      setOpen(false);
+    },
+  });
+
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [message, setMessage] = useState('');
 
@@ -28,8 +40,11 @@ export default function ForwardTeamPopup({ open, setOpen }: ForwardTeamPopupProp
 
   const handleForward = () => {
     if (selectedTeam && message.trim()) {
-      console.log('Forwarding to:', selectedTeam.name, 'with message:', message);
-      // Add your forward logic here
+      forwardComplaint.mutate({
+        teamId: selectedTeam.id,
+        comment: message.trim(),
+        complaintId: complainId,
+      });
       setOpen(false);
     }
   };

@@ -18,8 +18,8 @@ export const ticketDetailsSchema = ticketSchema.extend({
   issueOptionName: z.string(),
   escalationLevel: z.number().min(0).max(3).optional().nullable(),
   teamId: z.number().min(1),
-  updatedAt: z.string(),
   location: z.string(),
+  assignedWorkerName: z.string().optional().nullable(),
 });
 
 // type for the extended ticket schema

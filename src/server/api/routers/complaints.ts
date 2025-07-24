@@ -1,4 +1,4 @@
-import { title } from "process";
+
 import { createTRPCRouter } from "../trpc";
 import { publicProcedure } from "../trpc";
 import { z } from "zod";
@@ -101,12 +101,12 @@ export const complaintsRouter = createTRPCRouter({
 
     // assign complaint to a worker 
     assignComplainToWorker: publicProcedure.input(z.object({
-        workerId: z.string(),
+        workerId: z.number(),
         complaintId: z.string(),
     })).mutation(async ({ ctx, input }) => {
         const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
-        const res = await fetch(`${BASE_URL}/assignToWorker`, {
-            method: "POST",
+        const res = await fetch(`${BASE_URL}/assignWorker`, {
+            method: "PUT",
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${ctx.token}`,
@@ -119,5 +119,59 @@ export const complaintsRouter = createTRPCRouter({
                     // console.log("validated response of assign complain to worker", validated);
         return json;
     }),
+
+
+    // forward complaint to a team
+    forwardComplainToTeam: publicProcedure.input(z.object({
+        teamId: z.number(), 
+        complaintId: z.string(),
+        comment: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/forwardComplaint`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
+            },
+            body: JSON.stringify(input),
+        });
+        const json = await res.json();
+        console.log("raw response of forward complain to team", json);
+        // const validated = forwardComplainToTeamResponseSchema.parse(json);
+        // console.log("validated response of forward complain to team", validated);
+        return json;
+    }),
+
+    // get complaint logs
+    getComplaintLogs: publicProcedure.input(z.object({ complaintId: z.string() })).query(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/getComplainLogs/${input.complaintId}`, {
+            headers: {
+                Authorization: `Bearer ${ctx.token}`,
+            },
+        });
+        const json = await res.json();
+        console.log("raw response of get complaint logs", json);
+        return json;
+    }
+    ),
+
+    // delete a complaint
+    deleteComplaint: publicProcedure.input(z.object({ complaintId: z.string() })).mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/deleteComplaint/${input.complaintId}`, {
+            method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
+            },
+        });
+        const json = await res.json();
+        console.log("raw response of delete complaint", json);
+        return json;
+    }),
+
+
 
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, User, MapPin, Clock, FileText, Paperclip, AlertTriangle, Settings, Trash2, MoreVertical, Edit3, MessageSquare, Eye, Send } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, Paperclip, AlertTriangle, Settings, Trash2, MoreVertical, MessageSquare, Send } from 'lucide-react';
 import { api } from '~/trpc/react';
 import { format } from 'date-fns';
 import Loader from '~/app/_components/Loader';
@@ -12,10 +12,18 @@ import PopupImageViewer from '~/app/_components/PopupImageViewer';
 import { useState } from 'react';
 import MyTeamPopup from '~/app/_components/teams/myTeamPopups';
 import ForwardTeamPopup from '~/app/_components/teams/forwardComplaintPopup';
+import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
+import type { log } from '~/types/logs/log';
+import { useEffect } from 'react';
+import { useToast } from '~/app/_components/ToastProvider';
 
 export default function TicketDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { isSignedIn, user, isLoaded } = useUser();
+  const {addToast} = useToast();
+
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const id = typeof params.id === 'string' ? params.id : '';
@@ -24,9 +32,37 @@ export default function TicketDetailPage() {
   const { data: ticket, isLoading, error } = api.complaints.getComplainInfo.useQuery({ id });
   const complaint = ticket?.data?.complaint;
   const attachments = ticket?.data?.attachments || [];
-  
+  const { data: getComplaintLogsResponse, isLoading: isLogsLoading } = api.complaints.getComplaintLogs.useQuery({ complaintId: id });
+  const logs = getComplaintLogsResponse?.data?.logs || [];
+  const {
+    mutate: deleteComplaint,
+    isPending: isDeleting,
+    isSuccess: isDeleteSuccess,
+    isError: isDeleteError,
+    error: deleteError,
+  } = api.complaints.deleteComplaint.useMutation();
 
-  if (isLoading) {
+    useEffect(() => {
+  if (isDeleteSuccess) {
+    const role = user?.publicMetadata?.role;
+    if (role === 'employee') {
+      router.replace('/dashboard/employee');
+      router.refresh();
+      addToast('Complaint deleted successfully!', 'success');
+    } else if (role === 'admin') {
+      router.replace('/dashboard/admin');
+      router.refresh();
+      addToast('Complaint deleted successfully!', 'success');
+    }
+  }
+
+  if (isDeleteError) {
+    console.error('Error deleting complaint:', deleteError);
+    alert('Failed to delete the complaint. Please try again later.');
+  }
+}, [isDeleteSuccess, isDeleteError, deleteError, user, router]);
+
+  if (isLoading || !isLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center space-y-4">
@@ -59,6 +95,34 @@ export default function TicketDetailPage() {
     );
   }
 
+  if (!isSignedIn) {
+    return <div className="flex h-screen items-center justify-center bg-black">
+      <div className="justify-center items-center text-center p-20">
+        <p className="text-white text-xl font-bold ">Error | Please Sign In to access this page.</p>
+        {/* here we give the sign in link that takes the user to home page */}
+        <p><Link href="/" className="text-blue-500 hover:underline">Sign In/Sign Up</Link></p>
+      </div>
+    </div>;
+  }
+
+  if (isDeleting) {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="flex flex-col items-center space-y-4">
+        <Loader />
+        <p className="text-sm text-gray-500">Deleting complaint...</p>
+      </div>
+    </div>
+  );
+}
+
+
+
+  function handleDeleteComplaint(complaintId: string) {
+    deleteComplaint({ complaintId });
+    console.log('deleting complaint with id:', complaintId);
+  }
+
 
   const handleImageClick = (url: string) => {
     setSelectedImage(url);
@@ -88,28 +152,33 @@ export default function TicketDetailPage() {
 
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center space-x-3">
-              <button className="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-                <Clock className="h-4 w-4 mr-2" />
-                Close Ticket
-              </button>
-              <button className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-                onClick={() => setIsMyTeamPopupOpen(true)}
-              >
-                <User className="h-4 w-4 mr-2" />
-                Assign
-              </button>
-              <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => {setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...');}}>
-                <Send className="h-4 w-4 mr-2" />
-                Forward Complaint
-              </button>
-              <button className="inline-flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-                <Edit3 className="h-4 w-4 mr-2" />
-                Edit
-              </button>
-              <div className="flex items-center">
-                <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash2 className="h-4 w-4" />
+              {user?.publicMetadata?.role === 'worker' && (
+                <button className="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Close Ticket
                 </button>
+              )}
+              {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
+                <button className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                  onClick={() => setIsMyTeamPopupOpen(true)}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Assign
+                </button>
+              )}
+              {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
+                <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => { setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...'); }}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Forward Complaint
+                </button>
+              )}
+
+              <div className="flex items-center">
+                {user?.publicMetadata?.role === 'employee' && complaint?.status === "waiting_assignment" && (
+                  <button className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDeleteComplaint(id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -123,17 +192,31 @@ export default function TicketDetailPage() {
         {/* Mobile Action Bar */}
         <div className="lg:hidden px-4 py-3 bg-gray-50 border-t border-gray-200 w-full">
           <div className="flex space-x-2 max-w-full">
-            <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-              <User className="h-4 w-4 mr-2" />
-              Assign
-            </button>
-            <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors">
-              <Clock className="h-4 w-4 mr-2" />
-              Close
-            </button>
-            <button className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors">
-              <Edit3 className="h-4 w-4" />
-            </button>
+            {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
+              <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                <User className="h-4 w-4 mr-2" />
+                Assign
+              </button>
+            )}
+            {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
+              <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                <User className="h-4 w-4 mr-2" />
+                Forward Complaint
+              </button>
+            )}
+
+            {user?.publicMetadata?.role === 'worker' && (
+              <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors">
+                <Clock className="h-4 w-4 mr-2" />
+                Close
+              </button>
+            )}
+
+            {user?.publicMetadata?.role === 'employee' && complaint?.status === "waiting_assignment" && (
+              <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDeleteComplaint(id)}>
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -191,8 +274,9 @@ export default function TicketDetailPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-500">Assigned To</p>
+                    <p className="text-base font-semibold text-gray-900 truncate">{complaint?.assignedWorkerName}</p>
                     <p className="text-base font-semibold text-gray-900 truncate">
-                      {complaint?.assignedWorker || (
+                      {complaint?.assignedWorkerId || (
                         <span className="text-amber-600 italic">Unassigned</span>
                       )}
                     </p>
@@ -345,7 +429,7 @@ export default function TicketDetailPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
+                {/* <div className="flex items-start gap-3">
                   <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900">Last Updated</p>
@@ -355,9 +439,53 @@ export default function TicketDetailPage() {
                         : 'Not available'}
                     </p>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
+
+            {/* {logs section} */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-gray-500" />
+                  Logs
+                </h3>
+              </div>
+
+              <div className="p-4 sm:p-6 space-y-4">
+                {isLogsLoading ? (
+                  <p className="text-sm text-gray-500">Loading logs...</p>
+                ) : logs.length === 0 ? (
+                  <p className="text-sm text-gray-500">No logs available.</p>
+                ) : (
+                  logs.map((log: log) => (
+                    <div key={log.id} className="flex items-start gap-3">
+                      <div
+                        className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${complaintStatusColorMap[log.status] || "bg-gray-400"}`}
+                      ></div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900 capitalize">
+                          {log.status.replaceAll("_", " ")}
+                        </p>
+                        {log.comment && (
+                          <p className="text-sm text-gray-700 italic">“{log.comment}”</p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          <span className="text-blue-600 font-medium">
+                            {log.changedByName ? `By ${log.changedByName}` : "By system"}
+                          </span>{" "}
+                          ·{" "}
+                          <span className="text-gray-400">
+                            {log.timeStamp ? format(new Date(log.timeStamp), "PPpp") : "Unknown time"}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
 
             {/* Quick Actions - Mobile */}
             <div className="lg:hidden bg-white rounded-xl shadow-sm border border-gray-200">
@@ -368,10 +496,6 @@ export default function TicketDetailPage() {
                 <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
                   <MessageSquare className="h-4 w-4" />
                   Add Comment
-                </button>
-                <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium rounded-lg transition-colors">
-                  <Edit3 className="h-4 w-4" />
-                  Edit Details
                 </button>
               </div>
             </div>
@@ -385,9 +509,9 @@ export default function TicketDetailPage() {
             )}
 
             {/* My Team Popup */}
-            <MyTeamPopup open={isMyTeamPopupOpen} setOpen={setIsMyTeamPopupOpen} />
+            <MyTeamPopup open={isMyTeamPopupOpen} setOpen={setIsMyTeamPopupOpen} complainId={id} />
 
-            <ForwardTeamPopup open={isForwardTeamPopupOpen} setOpen={setIsForwardTeamPopupOpen} />
+            <ForwardTeamPopup open={isForwardTeamPopupOpen} setOpen={setIsForwardTeamPopupOpen} complainId={id} />
 
           </div>
         </div>

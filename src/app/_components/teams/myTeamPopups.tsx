@@ -7,8 +7,17 @@ import { api } from '~/trpc/react'; // tRPC hooks
 import { User2, X, Users, Clock } from 'lucide-react';
 import type { TeamWorker } from '~/types/teams/teamWorker';
 
-export default function MyTeamPopup({ open, setOpen }: { open: boolean; setOpen: (val: boolean) => void }) {
+interface MyTeamPopupProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  complainId: string;
+}
+
+
+export default function MyTeamPopup({ open, setOpen, complainId }: MyTeamPopupProps) {
   const { data: getTeamWorkersResponse, isLoading } = api.teams.getTeamWorkers.useQuery();
+  // api call to assign ticket to a worker
+  const assignTicketToWorker = api.complaints.assignComplainToWorker.useMutation();
   const [workers, setWorkers] = useState<TeamWorker[]>([]);
 
   useEffect(() => {
@@ -16,6 +25,21 @@ export default function MyTeamPopup({ open, setOpen }: { open: boolean; setOpen:
       setWorkers(getTeamWorkersResponse?.data?.workers || []);
     }
   }, [getTeamWorkersResponse]);
+
+  // handle assigning a worker
+  const handleAssignWorker = async (workerId: number) => {
+    try {
+      const response = await assignTicketToWorker.mutateAsync({
+        workerId,
+        complaintId: complainId,
+      });
+      console.log('Worker assigned successfully:', response);
+      setOpen(false); // Close the popup after assignment
+    } catch (error) {
+      console.error('Error assigning worker:', error);
+      // Handle error (e.g., show notification)
+    }
+  };
 
   return (
     <>
@@ -132,6 +156,7 @@ export default function MyTeamPopup({ open, setOpen }: { open: boolean; setOpen:
         onClick={(e) => {
           e.stopPropagation();
           console.log('Assigning to:', worker.workerName);
+          handleAssignWorker(worker.workerId);
         }}
         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300"
       >

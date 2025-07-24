@@ -107,7 +107,6 @@ const Sidebar = () => {
               <span className={`text-xs font-medium truncate ${
                 red ? 'text-red-500' : 'text-gray-600'
               }`}>
-                {name}
               </span>
             </button>
           ))}
