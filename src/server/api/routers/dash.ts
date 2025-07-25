@@ -39,18 +39,7 @@ export const dashRouter = createTRPCRouter({
 
     }),
 
-    getUserInfo: publicProcedure
-    .query(async ({ ctx }) => {
-        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/dash`;
-        const res = await fetch(`${BASE_URL}/getUserInfo`, {
-            headers: {
-                Authorization: `Bearer ${ctx.token}`,
-            },
-        });
-        const json = await res.json();
-        console.log("raw response", json);
-        return json;
-    }),
+    
 
 });
 

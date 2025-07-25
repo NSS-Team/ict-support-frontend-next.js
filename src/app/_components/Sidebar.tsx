@@ -34,7 +34,16 @@ const Sidebar = () => {
       color: 'black',
       size: 20,
       onClick: () => {
-        router.push('/dashboard/employee');
+        // router.push('/dashboard/employee');
+        if(userRole === 'employee') {
+          router.push('/dashboard/employee');
+        } else if(userRole === 'worker') {
+          router.push('/dashboard/worker');
+        } else if(userRole === 'manager') {
+          router.push('/dashboard/manager');
+        } else if(userRole === 'admin') {
+          router.push('/dashboard/admin');
+        }
       },
       roles: ['employee', 'worker', 'admin', 'manager'],
     },
@@ -51,7 +60,7 @@ const Sidebar = () => {
       icon: Users,
       color: 'black',
       size: 20,
-      onClick: () => console.log('My Team clicked'),
+      onClick: () => router.push('/MyTeam'),
       roles : ['manager']
     },
     {
@@ -67,7 +76,7 @@ const Sidebar = () => {
       icon: UserCircle,
       color: 'black',
       size: 20,
-      onClick: () => console.log('My Account clicked'),
+      onClick: () => router.push('/MyProfile'),
       roles: ['employee', 'worker', 'admin', 'manager'],
     },
     {
@@ -90,6 +99,7 @@ const Sidebar = () => {
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex group w-15 pl-3 pt-6 hover:w-64 bg-white h-screen flex-col transition-all duration-300 ">
+
         <nav className="flex-1 px-2 py-4 space-y-2">
           {navItems
             .filter(item => item.roles.includes(userRole))
