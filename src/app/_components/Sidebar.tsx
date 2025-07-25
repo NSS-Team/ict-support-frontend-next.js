@@ -4,10 +4,18 @@ import { Home, Users, UserPlus, UserCircle, LogOut, Plus } from 'lucide-react';
 import '~/styles/globals.css';
 import { useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import { userRolesEnum } from '~/types/enums';
 
 const Sidebar = () => {
   const { signOut } = useClerk();
   const router = useRouter();
+  const { user } = useUser();
+  const userRole =
+    typeof user?.publicMetadata?.role === 'string'
+      ? user.publicMetadata.role
+      : 'user';
+  const userRoles = userRolesEnum.options;
 
   const navItems = [
     {
@@ -18,6 +26,7 @@ const Sidebar = () => {
       onClick: () => {
         router.push('/newTicket');
       },
+      roles: ['employee'],
     },
     {
       name: 'Complaints',
@@ -27,6 +36,7 @@ const Sidebar = () => {
       onClick: () => {
         router.push('/dashboard/employee');
       },
+      roles: ['employee', 'worker', 'admin', 'manager'],
     },
     {
       name: 'Teams',
@@ -34,6 +44,15 @@ const Sidebar = () => {
       color: 'black',
       size: 20,
       onClick: () => console.log('Teams clicked'),
+      roles: ['admin'],
+    },
+    {
+      name: 'My Team',
+      icon: Users,
+      color: 'black',
+      size: 20,
+      onClick: () => console.log('My Team clicked'),
+      roles : ['manager']
     },
     {
       name: 'Registrations',
@@ -41,6 +60,7 @@ const Sidebar = () => {
       color: 'black',
       size: 20,
       onClick: () => console.log('Registrations clicked'),
+      roles: ['admin'],
     },
     {
       name: 'My Account',
@@ -48,6 +68,7 @@ const Sidebar = () => {
       color: 'black',
       size: 20,
       onClick: () => console.log('My Account clicked'),
+      roles: ['employee', 'worker', 'admin', 'manager'],
     },
     {
       name: 'Logout',
@@ -59,32 +80,37 @@ const Sidebar = () => {
         await signOut();
         router.replace('/');
       },
+      roles: ['employee', 'worker', 'admin', 'manager'],
     },
   ];
+
+  
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex group w-15 pl-3 pt-6 hover:w-64 bg-white h-screen flex-col transition-all duration-300 border-r border-gray-200">
+      <aside className="hidden md:flex group w-15 pl-3 pt-6 hover:w-64 bg-white h-screen flex-col transition-all duration-300 ">
         <nav className="flex-1 px-2 py-4 space-y-2">
-          {navItems.map(({ name, icon: Icon, color, size, red, onClick }) => (
-            <button
-              key={name}
-              onClick={onClick}
-              className={`flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                red ? 'text-red-500 hover:bg-red-50' : 'text-gray-800 hover:bg-gray-200'
-              }`}
-            >
-              <Icon
-                className="flex-shrink-0 transition-transform duration-300"
-                size={size}
-                color={color}
-              />
-              <span className="whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300">
-                {name}
-              </span>
-            </button>
-          ))}
+          {navItems
+            .filter(item => item.roles.includes(userRole))
+            .map(({ name, icon: Icon, color, size, red, onClick }) => (
+              <button
+                key={name}
+                onClick={onClick}
+                className={`flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  red ? 'text-red-500 hover:bg-red-50' : 'text-gray-800 hover:bg-gray-200'
+                }`}
+              >
+                <Icon
+                  className="flex-shrink-0 transition-transform duration-300"
+                  size={size}
+                  color={color}
+                />
+                <span className="whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300">
+                  {name}
+                </span>
+              </button>
+            ))}
         </nav>
       </aside>
 

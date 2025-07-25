@@ -15,23 +15,34 @@ import { SignOutButton } from '@clerk/nextjs';
 import { api } from '~/trpc/react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Notification } from '~/types/notifications/Notification';
-
+import { useUser } from '@clerk/nextjs';
 
 const Navbar = () => {
+  const {user} = useUser();
+  const [shouldFetchNotifications, setShouldFetchNotifications] = useState(false);
   const [totalUnread, setTotalUnread] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [notificationOffset, setNotificationOffset] = useState(0);
   const notificationRef = useRef(null);
+
+  // api to fetch notifications
   const { data: getNotificationsResponse } = api.notifications.getNotifications.useQuery({
     offset: notificationOffset,
-  });
+  }, {enabled: shouldFetchNotifications});
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // mark a single notification as read api
   const { mutate: markNotificationAsRead } = api.notifications.markNotificationAsRead.useMutation();
   // mark all notifications as read api
   const { mutate: markAllNotificationsAsRead } = api.notifications.markAllNotificationsAsRead.useMutation();
+
+// useeffect to check if the user is logged in and fetch notifications
+  useEffect(() => {
+    if (user) {
+      setShouldFetchNotifications(true);
+    }
+  }, [user]);
 
   useEffect(() => {
     const rawData = getNotificationsResponse;
@@ -160,8 +171,11 @@ const Navbar = () => {
       </div>
 
       {/* Right Section */}
+       {/*only show these buttons when the user is logged in  */}
+      {user && (
       <div className="flex items-center gap-3">
         {/* Notifications */}
+        {(user.publicMetadata.role === 'manager' || user.publicMetadata.role === 'employee' || user.publicMetadata.role === 'worker') && (
         <div className="relative" ref={notificationRef}>
           <button
             onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -262,8 +276,7 @@ const Navbar = () => {
 
             </div>
           )}
-        </div>
-
+        </div>)}
         {/* Logout */}
         <div className="relative">
           <SignOutButton>
@@ -281,6 +294,7 @@ const Navbar = () => {
           <User className="w-4 h-4 text-gray-600" />
         </div>
       </div>
+      )}
     </header>
   );
 };
