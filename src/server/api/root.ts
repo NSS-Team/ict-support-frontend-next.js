@@ -5,6 +5,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { dashRouter } from "./routers/dash";
 import { complaintsRouter } from "./routers/complaints";
 import { managerDashRouter } from "./routers/managerDash";
+import { notificationRouter } from "./routers/notification";
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   teams: teamsRouter,
   dash: dashRouter,
   managerDash: managerDashRouter,
+  notifications: notificationRouter
 
 });
 

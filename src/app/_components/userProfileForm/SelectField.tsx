@@ -15,15 +15,11 @@ interface SelectFieldProps {
   disabled?: boolean;
 }
 
-const SelectField = ({
-  label,
-  name,
-  options,
-  value,
-  onChange,
-  error,
-  disabled = false,
-}: SelectFieldProps) => (
+const SelectField = ({label,name,options,value,onChange,error,disabled = false,}: SelectFieldProps) => 
+  {
+    console.log("SelectField rendered with options:", options);
+    
+    return (
   <div className="flex flex-col w-full">
     <label htmlFor={name} className="mb-1 font-medium text-neutral-600">
       {label}
@@ -52,5 +48,5 @@ const SelectField = ({
     {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
   </div>
 );
-
+  }
 export default SelectField;

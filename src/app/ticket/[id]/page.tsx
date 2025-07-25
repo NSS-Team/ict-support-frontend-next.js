@@ -23,17 +23,25 @@ export default function TicketDetailPage() {
   const params = useParams();
   const { isSignedIn, user, isLoaded } = useUser();
   const {addToast} = useToast();
-
-
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const id = typeof params.id === 'string' ? params.id : '';
   const [isMyTeamPopupOpen, setIsMyTeamPopupOpen] = useState(false);
   const [isForwardTeamPopupOpen, setIsForwardTeamPopupOpen] = useState(false);
+  const [shouldFetchTeams , setShouldFetchTeams] = useState(false);
+  const [shouldFetchMyTeamMembers, setShouldFetchMyTeamMembers] = useState(false);
+  
+
+  // api to fetch the ticket details
   const { data: ticket, isLoading, error } = api.complaints.getComplainInfo.useQuery({ id });
   const complaint = ticket?.data?.complaint;
   const attachments = ticket?.data?.attachments || [];
-  const { data: getComplaintLogsResponse, isLoading: isLogsLoading } = api.complaints.getComplaintLogs.useQuery({ complaintId: id });
+
+  // api to fetch the complaint logs
+  const { data: getComplaintLogsResponse, refetch: refetchLogs, isLoading: isLogsLoading } = api.complaints.getComplaintLogs.useQuery({ complaintId: id });
   const logs = getComplaintLogsResponse?.data?.logs || [];
+
+  // api to delete the complaint
+  // this will be used when the user clicks on delete button
   const {
     mutate: deleteComplaint,
     isPending: isDeleting,
@@ -41,6 +49,9 @@ export default function TicketDetailPage() {
     isError: isDeleteError,
     error: deleteError,
   } = api.complaints.deleteComplaint.useMutation();
+  const MyTeamId: number | null = user?.publicMetadata?.teamId as number | null;
+  // const MyTeamName: string | null = user?.publicMetadata?.teamName as string | null;
+
 
     useEffect(() => {
   if (isDeleteSuccess) {
@@ -61,6 +72,24 @@ export default function TicketDetailPage() {
     alert('Failed to delete the complaint. Please try again later.');
   }
 }, [isDeleteSuccess, isDeleteError, deleteError, user, router]);
+
+  // // check if we need to fetch the teams 
+  // useEffect(() => {
+  //   if (shouldFetchTeams) {
+  //     refetchLogs().then(() => {
+  //       setShouldFetchTeams(false);
+  //     });
+  //   }
+  // }, [shouldFetchTeams, refetchLogs]);
+
+  // // check if we need to fetch the my team members
+  // useEffect(() => {
+  //   if (shouldFetchMyTeamMembers) {
+  //     refetchLogs().then(() => {
+  //       setShouldFetchMyTeamMembers(false);
+  //     });
+  //   }
+  // }, [shouldFetchMyTeamMembers, refetchLogs]);
 
   if (isLoading || !isLoaded) {
     return (
@@ -160,14 +189,14 @@ export default function TicketDetailPage() {
               )}
               {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
                 <button className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-                  onClick={() => setIsMyTeamPopupOpen(true)}
+                  onClick={() => { setIsMyTeamPopupOpen(true); setShouldFetchMyTeamMembers(true); console.log('Assigning ticket...'); }}
                 >
                   <User className="h-4 w-4 mr-2" />
                   Assign
                 </button>
               )}
               {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
-                <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => { setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...'); }}>
+                <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => { setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...'); setShouldFetchTeams(true); }}>
                   <Send className="h-4 w-4 mr-2" />
                   Forward Complaint
                 </button>
@@ -509,9 +538,10 @@ export default function TicketDetailPage() {
             )}
 
             {/* My Team Popup */}
-            <MyTeamPopup open={isMyTeamPopupOpen} setOpen={setIsMyTeamPopupOpen} complainId={id} />
 
-            <ForwardTeamPopup open={isForwardTeamPopupOpen} setOpen={setIsForwardTeamPopupOpen} complainId={id} />
+            {<MyTeamPopup open={isMyTeamPopupOpen} setOpen={setIsMyTeamPopupOpen} complainId={id} assignedWorkerId={complaint?.assignedWorkerId} />}
+
+            <ForwardTeamPopup open={isForwardTeamPopupOpen} setOpen={setIsForwardTeamPopupOpen} complainId={id} MyTeamId={MyTeamId} />
 
           </div>
         </div>

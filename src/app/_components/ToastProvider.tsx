@@ -7,7 +7,7 @@ import { X, CheckCircle, Info, AlertTriangle, XCircle } from 'lucide-react';
 interface Toast {
   id: number;
   message: string;
-  type?: 'success' | 'info' | 'warning' | 'error';
+  type?: 'success' | 'info' | 'warning' | 'error' ; 
   title?: string;
 }
 

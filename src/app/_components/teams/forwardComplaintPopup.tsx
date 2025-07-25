@@ -11,14 +11,20 @@ interface ForwardTeamPopupProps {
   open: boolean;
   setOpen: (value: boolean) => void;
   complainId: string; // Optional, if you want to use this in the future
+  MyTeamId: number | null;
 }
 
-export default function ForwardTeamPopup({ open, setOpen, complainId }: ForwardTeamPopupProps) {
+export default function ForwardTeamPopup({ open, setOpen, complainId, MyTeamId }: ForwardTeamPopupProps) {
 
-  const toast = useToast();
+  const {addToast} = useToast();
 
-  const { data: getTeamsResponse, isLoading: teamsLoading, isError: getTeamsError } = api.teams.getTeams.useQuery();
+  // fetching the teams api
+  const { data: getTeamsResponse, refetch: refetchTeams, isLoading: teamsLoading, isError: getTeamsError } = api.teams.getTeams.useQuery(undefined, {
+    enabled: open, // Only fetch when the popup is open
+  });
   const teams = getTeamsResponse?.data?.teams || [];
+
+  // api that triggers when forward complaint button is clicked
   const forwardComplaint = api.complaints.forwardComplainToTeam.useMutation({
     onSuccess: () => {
       // Show success toast
@@ -105,59 +111,56 @@ export default function ForwardTeamPopup({ open, setOpen, complainId }: ForwardT
             ) : (
               <>
                 <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar mb-6">
+                  {/* if the team id is not equal to the user's team id, show the team */}
                   {teams.map((team: Team, index: number) => (
-                    <div
-                      key={team.id}
-                      onClick={() => setSelectedTeam(selectedTeam?.id === team.id ? null : team)}
-                      className={`group flex items-center gap-4 p-4 border rounded-xl transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer ${
-                        selectedTeam?.id === team.id
-                          ? 'border-blue-500 bg-blue-50 shadow-md'
-                          : 'border-slate-200 hover:border-blue-300'
-                      }`}
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="relative shrink-0">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${
-                            selectedTeam?.id === team.id
-                              ? 'bg-gradient-to-br from-blue-100 to-blue-200'
-                              : 'bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-blue-100 group-hover:to-blue-200'
+                    team.id !== MyTeamId && (
+                      <div
+                        key={team.id}
+                        onClick={() => setSelectedTeam(selectedTeam?.id === team.id ? null : team)}
+                        className={`group flex items-center gap-4 p-4 border rounded-xl transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer ${selectedTeam?.id === team.id
+                            ? 'border-blue-500 bg-blue-50 shadow-md'
+                            : 'border-slate-200 hover:border-blue-300'
+                          }`}
+                        style={{ animationDelay: `${index * 100}ms` }}
+                      >
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="relative shrink-0">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${selectedTeam?.id === team.id
+                                ? 'bg-gradient-to-br from-blue-100 to-blue-200'
+                                : 'bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-blue-100 group-hover:to-blue-200'
+                              }`}>
+                              <Users className={`w-6 h-6 transition-colors duration-300 ${selectedTeam?.id === team.id
+                                  ? 'text-blue-600'
+                                  : 'text-slate-600 group-hover:text-blue-600'
+                                }`} />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className={`font-medium truncate transition-colors duration-300 ${selectedTeam?.id === team.id
+                                  ? 'text-blue-900'
+                                  : 'text-slate-900 group-hover:text-blue-900'
+                                }`}>
+                                {team.name}
+                              </p>
+                            </div>
+                            <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+                              <ShieldCheck className="w-4 h-4" />
+                              <span>Manager: {team.managerName ?? 'No manager assigned'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Selection indicator */}
+                        <div className={`w-5 h-5 rounded-full border-2 transition-all duration-200 ${selectedTeam?.id === team.id
+                            ? 'border-blue-500 bg-blue-500'
+                            : 'border-slate-300'
                           }`}>
-                            <Users className={`w-6 h-6 transition-colors duration-300 ${
-                              selectedTeam?.id === team.id
-                                ? 'text-blue-600'
-                                : 'text-slate-600 group-hover:text-blue-600'
-                            }`} />
-                          </div>
+                          {selectedTeam?.id === team.id && (
+                            <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className={`font-medium truncate transition-colors duration-300 ${
-                              selectedTeam?.id === team.id
-                                ? 'text-blue-900'
-                                : 'text-slate-900 group-hover:text-blue-900'
-                            }`}>
-                              {team.name}
-                            </p>
-                          </div>
-                          <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
-                            <ShieldCheck className="w-4 h-4" />
-                            <span>Manager: {team.managerName ?? 'No manager assigned'}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Selection indicator */}
-                      <div className={`w-5 h-5 rounded-full border-2 transition-all duration-200 ${
-                        selectedTeam?.id === team.id
-                          ? 'border-blue-500 bg-blue-500'
-                          : 'border-slate-300'
-                      }`}>
-                        {selectedTeam?.id === team.id && (
-                          <div className="w-full h-full rounded-full bg-white scale-50"></div>
-                        )}
-                      </div>
-                    </div>
+                      </div>)
                   ))}
                 </div>
 
@@ -175,11 +178,10 @@ export default function ForwardTeamPopup({ open, setOpen, complainId }: ForwardT
                     disabled={!selectedTeam}
                     placeholder={selectedTeam ? "Add a message with your forwarding request..." : "Select a team to enable message field"}
                     rows={3}
-                    className={`w-full px-4 py-3 border rounded-xl resize-none transition-all duration-200 ${
-                      selectedTeam
+                    className={`w-full px-4 py-3 border rounded-xl resize-none transition-all duration-200 ${selectedTeam
                         ? 'border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-slate-900'
                         : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed'
-                    }`}
+                      }`}
                   />
                 </div>
               </>
@@ -193,15 +195,14 @@ export default function ForwardTeamPopup({ open, setOpen, complainId }: ForwardT
             >
               Cancel
             </button>
-            
+
             <button
               onClick={handleForward}
               disabled={!selectedTeam || !message.trim()}
-              className={`px-6 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
-                selectedTeam && message.trim()
+              className={`px-6 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${selectedTeam && message.trim()
                   ? 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-              }`}
+                }`}
             >
               Forward to Team
             </button>

@@ -6,5 +6,5 @@ export const categorySchema = z.object({
 });
 
 // type of category schema 
-
+export type Category = z.infer<typeof categorySchema>;
 

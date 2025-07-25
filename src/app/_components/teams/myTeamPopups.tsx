@@ -2,23 +2,40 @@
 
 import { useEffect, useState } from 'react';
 import { Dialog } from '@headlessui/react';
-import { useQuery } from '@tanstack/react-query';
 import { api } from '~/trpc/react'; // tRPC hooks
 import { User2, X, Users, Clock } from 'lucide-react';
 import type { TeamWorker } from '~/types/teams/teamWorker';
+import { useRouter } from 'next/navigation';
 
 interface MyTeamPopupProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   complainId: string;
+  assignedWorkerId?: number | null;
 }
 
 
-export default function MyTeamPopup({ open, setOpen, complainId }: MyTeamPopupProps) {
-  const { data: getTeamWorkersResponse, isLoading } = api.teams.getTeamWorkers.useQuery();
+export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkerId }: MyTeamPopupProps) {
+  const router = useRouter();
+  // State to manage loading state for assigning worker
+  const [assigningWorkerId, setAssigningWorkerId] = useState<number | null>(null);
+
+  // fetching the team workers
+  const { data: getTeamWorkersResponse, refetch: refetchMyTeamWorkers, isLoading } = api.teams.getTeamWorkers.useQuery(undefined, { enabled: open });
   // api call to assign ticket to a worker
   const assignTicketToWorker = api.complaints.assignComplainToWorker.useMutation();
   const [workers, setWorkers] = useState<TeamWorker[]>([]);
+
+  // // useeffect to enable the fetchMyTeamWorkers query when the popup opens
+  // useEffect(() => {
+  //   if (open) {
+  //     refetchMyTeamWorkers().then(() => {
+  //       console.log('Refetched team workers');
+  //     }).catch((error) => {
+  //       console.error('Error fetching team workers:', error);
+  //     });
+  //   }
+  // }, [open, refetchMyTeamWorkers]);
 
   useEffect(() => {
     if (getTeamWorkersResponse) {
@@ -29,15 +46,19 @@ export default function MyTeamPopup({ open, setOpen, complainId }: MyTeamPopupPr
   // handle assigning a worker
   const handleAssignWorker = async (workerId: number) => {
     try {
+      setAssigningWorkerId(workerId); // start loading for this worker
       const response = await assignTicketToWorker.mutateAsync({
         workerId,
         complaintId: complainId,
       });
       console.log('Worker assigned successfully:', response);
-      setOpen(false); // Close the popup after assignment
+      router.refresh(); // Refresh the page to reflect changes
+      setOpen(false); // Close popup
     } catch (error) {
       console.error('Error assigning worker:', error);
-      // Handle error (e.g., show notification)
+      // Optionally show toast/notification
+    } finally {
+      setAssigningWorkerId(null); // stop loading
     }
   };
 
@@ -45,18 +66,16 @@ export default function MyTeamPopup({ open, setOpen, complainId }: MyTeamPopupPr
     <>
       <Dialog open={open} onClose={() => setOpen(false)} className="relative z-50">
         {/* Animated backdrop */}
-        <div 
-          className={`fixed inset-0 bg-gradient-to-br from-slate-900/20 via-slate-800/30 to-slate-900/40 backdrop-blur-sm transition-all duration-300 ${
-            open ? 'opacity-100' : 'opacity-0'
-          }`} 
-          aria-hidden="true" 
+        <div
+          className={`fixed inset-0 bg-gradient-to-br from-slate-900/20 via-slate-800/30 to-slate-900/40 backdrop-blur-sm transition-all duration-300 ${open ? 'opacity-100' : 'opacity-0'
+            }`}
+          aria-hidden="true"
         />
 
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className={`w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200/60 transform transition-all duration-300 ${
-            open ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'
-          }`}>
-            
+          <Dialog.Panel className={`w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200/60 transform transition-all duration-300 ${open ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'
+            }`}>
+
             {/* Enhanced Header with gradient */}
             <div className="relative px-6 py-5 bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200/60 rounded-t-2xl">
               <div className="flex items-center justify-between">
@@ -100,75 +119,76 @@ export default function MyTeamPopup({ open, setOpen, complainId }: MyTeamPopupPr
                 </div>
               ) : (
                 <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
-                 {workers?.map((worker: TeamWorker, index: number) => (
-  <div
-    key={worker.workerId}
-    className={`group flex items-center justify-between gap-4 p-4 border rounded-xl transition-transform duration-200 hover:shadow-md hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-blue-200 ${
-      worker.status === 'busy'
-        ? 'border-slate-200/60 bg-slate-50/70 opacity-75'
-        : 'border-slate-200/60 hover:border-blue-200 hover:bg-blue-50/40'
-    }`}
-    style={{ animationDelay: `${index * 100}ms` }}
-    tabIndex={0}
-  >
-    {/* Left: Avatar + Info */}
-    <div className="flex items-center gap-4 flex-1">
-      {/* Avatar */}
-      <div className="relative shrink-0">
-        <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center group-hover:from-blue-100 group-hover:to-blue-200 transition-all duration-300 shadow-sm">
-          <User2 className="w-6 h-6 text-slate-600 group-hover:text-blue-600 transition-colors duration-300" />
-        </div>
-        <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 border-2 border-white rounded-full shadow-sm ${
-          worker.status === 'busy' ? 'bg-amber-400' : 'bg-emerald-400'
-        }`} />
-      </div>
+                  {workers?.map((worker: TeamWorker, index: number) => (
+                    <div
+                      key={worker.workerId}
+                      className={`group flex items-center justify-between gap-4 p-4 border rounded-xl transition-transform duration-200 hover:shadow-md hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-blue-200 ${worker.status === 'busy'
+                        ? 'border-slate-200/60 bg-slate-50/70 opacity-75'
+                        : 'border-slate-200/60 hover:border-blue-200 hover:bg-blue-50/40'
+                        }`}
+                      style={{ animationDelay: `${index * 100}ms` }}
+                      tabIndex={0}
+                    >
+                      {/* Left: Avatar + Info */}
+                      <div className="flex items-center gap-4 flex-1">
+                        {/* Avatar */}
+                        <div className="relative shrink-0">
+                          <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center group-hover:from-blue-100 group-hover:to-blue-200 transition-all duration-300 shadow-sm">
+                            <User2 className="w-6 h-6 text-slate-600 group-hover:text-blue-600 transition-colors duration-300" />
+                          </div>
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 border-2 border-white rounded-full shadow-sm ${worker.status === 'busy' ? 'bg-amber-400' : 'bg-emerald-400'
+                            }`} />
+                        </div>
 
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <p className="font-medium text-slate-900 truncate group-hover:text-blue-900 transition-colors duration-300">
-            {worker.workerName}
-          </p>
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${
-            worker.status === 'busy'
-              ? 'bg-amber-100 text-amber-700 border-amber-200'
-              : 'bg-emerald-100 text-emerald-700 border-emerald-200'
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full mr-1 ${
-              worker.status === 'busy' ? 'bg-amber-400' : 'bg-emerald-400'
-            }`} />
-            {worker.status === 'busy' ? 'Busy' : 'Available'}
-          </span>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-slate-500 font-mono">
-          <p>ID: {worker.workerId}</p>
-          <div className="flex items-center text-xs text-slate-400 font-sans">
-            <Clock className="w-3 h-3 mr-1" />
-            Online
-          </div>
-        </div>
-      </div>
-    </div>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-slate-900 truncate group-hover:text-blue-900 transition-colors duration-300">
+                              {worker.workerName}
+                            </p>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${worker.status === 'busy'
+                              ? 'bg-amber-100 text-amber-700 border-amber-200'
+                              : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                              }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full mr-1 ${worker.status === 'busy' ? 'bg-amber-400' : 'bg-emerald-400'
+                                }`} />
+                              {worker.status === 'busy' ? 'Busy' : 'Available'}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-slate-500 font-mono">
+                            <p>ID: {worker.workerId}</p>
+                            <div className="flex items-center text-xs text-slate-400 font-sans">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Online
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-    {/* Right: Action */}
-    {worker.status !== 'busy' ? (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          console.log('Assigning to:', worker.workerName);
-          handleAssignWorker(worker.workerId);
-        }}
-        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300"
-      >
-        Assign
-      </button>
-    ) : (
-      <div className="px-4 py-2 bg-gray-200 text-gray-500 text-sm font-medium rounded-lg cursor-not-allowed opacity-60">
-        Busy
-      </div>
-    )}
-  </div>
-))}
+                      {/* Right: Action */}
+                      {worker.status !== 'busy' ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAssignWorker(worker.workerId);
+                          }}
+                          disabled={assigningWorkerId === worker.workerId}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 ${assigningWorkerId === worker.workerId
+                              ? 'bg-blue-400 text-white cursor-wait'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md focus:ring-blue-300'
+                            }`}
+                        >
+                          {assigningWorkerId === worker.workerId ? 'Assigning...' : 'Assign'}
+                        </button>
+
+
+                      ) : (
+                        <div className="px-4 py-2 bg-gray-200 text-gray-500 text-sm font-medium rounded-lg cursor-not-allowed opacity-60">
+                          Busy
+                        </div>
+                      )}
+                    </div>
+                  ))}
 
                 </div>
               )}

@@ -1,14 +1,18 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef , useEffect} from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '~/trpc/react'; 
 import Sidebar from '../_components/Sidebar';
 import { priorityEnum, submissionPreferenceEnum, type SubmissionPreference } from '~/types/enums';
 import { uploadAttachment } from '~/utils/complaintAttachmentsUpload';
+import { useToast } from '../_components/ToastProvider';
+import type { IssueOption } from '~/types/categories/issueOptions';
+import type { SubCategory } from '~/types/categories/subCategory';
 
 export default function ComplaintForm() {
   const router = useRouter();
+  const {addToast} = useToast();
   
   type Upload = { file: File; note: string; type: string };
   type FormState = {
@@ -36,20 +40,25 @@ export default function ComplaintForm() {
   });
 
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: categoriesResponse } = api.complaints.getCategories.useQuery();
+  const { data: categoriesResponse, isLoading: categoriesLoading } = api.complaints.getCategories.useQuery();
   const categories = categoriesResponse?.data?.categories || [];
-  const { data: subcategories } = api.complaints.getSubCategories.useQuery(
+  
+  const { data: subcategories, isLoading: subcategoriesLoading } = api.complaints.getSubCategories.useQuery(
     { categoryId: form.categoryId },
     { enabled: !!form.categoryId }
   );
   const subCategories = subcategories?.data?.subCategories || [];
-  const { data: issues } = api.complaints.getIssueOptions.useQuery(
+  
+  const { data: issues, isLoading: issuesLoading } = api.complaints.getIssueOptions.useQuery(
     { subCategoryId: form.subCategoryId },
     { enabled: !!form.subCategoryId }
   );
   const issueOptions = issues?.data?.issueOptions || [];
+
   const handleBack = () => {
     router.back();
     router.refresh();
@@ -59,9 +68,11 @@ export default function ComplaintForm() {
   const generateComplain = api.complaints.generateComplain.useMutation({
     onSuccess: (data) => {
       console.log('Complaint generated successfully:', data);
+      // You might want to redirect or show success message here
     },
     onError: (error) => {
       console.error('Error generating complaint:', error);
+      // You might want to show error message here
     },
   });
 
@@ -100,20 +111,20 @@ export default function ComplaintForm() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
-  const updated = [...form.uploads];
-  const currentUpload = updated[index];
-  
-  if (currentUpload) {
-    // Explicitly preserve all properties
-    updated[index] = {
-      file: currentUpload.file,
-      note: key === 'note' ? value : currentUpload.note,
-      type: key === 'type' ? value : currentUpload.type,
-    };
-    setForm((prev) => ({ ...prev, uploads: updated }));
-  }
-};
+  const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
+    const updated = [...form.uploads];
+    const currentUpload = updated[index];
+    
+    if (currentUpload) {
+      // Explicitly preserve all properties
+      updated[index] = {
+        file: currentUpload.file,
+        note: key === 'note' ? value : currentUpload.note,
+        type: key === 'type' ? value : currentUpload.type,
+      };
+      setForm((prev) => ({ ...prev, uploads: updated }));
+    }
+  };
 
   const removeUpload = (index: number) => {
     const updated = [...form.uploads];
@@ -139,56 +150,102 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
 
   const handleSubmit = async () => {
     if (!form.title || !form.categoryId || !form.subCategoryId || !form.issueOptionId) {
-      alert('Please fill all required fields.');
+      addToast('Please fill in all required fields.', 'error');
       return;
     }
 
-    // Upload all files and get their URLs
-    const uploadsWithUrls = await Promise.all(
-      form.uploads.map(async (upload) => ({
-        type: upload.type,
-        url: await uploadAttachment(upload.file),
-        note: upload.note || null,
-      }))
-    );
+    setIsUploading(true);
+    setUploadProgress('Uploading files...');
 
-    generateComplain.mutate({
-      categoryId: form.categoryId,
-      subCategoryId: form.subCategoryId,
-      issueOptionId: form.issueOptionId,
-      customDescription: form.customDescription,
-      submissionPreference: (["remote", "on_site", "call_back"].includes(form.submissionPreference) ? form.submissionPreference : "remote") as "remote" | "on_site" | "call_back",
-      priority: (["low", "medium", "high", "urgent"].includes(form.priority) ? form.priority : "low") as "low" | "medium" | "high" | "urgent",
-      title: form.title,
-      device: form.device,
-      uploads: uploadsWithUrls,
-    });
+    try {
+      // Upload all files and get their URLs
+      const uploadsWithUrls = await Promise.all(
+        form.uploads.map(async (upload, index) => {
+          setUploadProgress(`Uploading file ${index + 1} of ${form.uploads.length}...`);
+          return {
+            type: upload.type,
+            url: await uploadAttachment(upload.file),
+            note: upload.note || null,
+          };
+        })
+      );
+
+      setUploadProgress('Submitting complaint...');
+
+      generateComplain.mutate({
+        categoryId: form.categoryId,
+        subCategoryId: form.subCategoryId,
+        issueOptionId: form.issueOptionId,
+        customDescription: form.customDescription,
+        submissionPreference: (["remote", "on_site", "call_back"].includes(form.submissionPreference) ? form.submissionPreference : "remote") as "remote" | "on_site" | "call_back",
+        priority: (["low", "medium", "high", "urgent"].includes(form.priority) ? form.priority : "low") as "low" | "medium" | "high" | "urgent",
+        title: form.title,
+        device: form.device,
+        uploads: uploadsWithUrls,
+      });
+    } catch (error : any) {
+      addToast('Error during submission: ' + error.message, 'error');
+      setIsUploading(false);
+      setUploadProgress('');
+    }
   };
 
-  interface Category {
-    id: string;
-    name: string;
+  // Reset loading state when mutation completes
+  useEffect(() => {
+  if (!generateComplain.isPending) {
+    setIsUploading(false);
+    setUploadProgress('');
   }
+}, [generateComplain.isPending]);
 
-  interface SubCategory {
-    id: string;
-    name: string;
-  }
+  // interface Category {
+  //   id: string;
+  //   name: string;
+  // }
 
-  interface IssueOption {
-    id: string | number;
-    name: string;
-  }
+  // interface SubCategory {
+  //   id: string;
+  //   name: string;
+  // }
+
+  // interface IssueOption {
+  //   id: string | number;
+  //   name: string;
+  // }
 
   const isOther: boolean =
     issueOptions?.find((i: IssueOption) => i.id.toString() === form.issueOptionId)?.name === 'Other (specify)';
+
+  const isSubmitting = generateComplain.isPending || isUploading;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-8 px-4">
       <div className="max-w-5xl mx-auto">
 
+        {/* Loading Overlay */}
+        {isSubmitting && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {uploadProgress || 'Processing your request...'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                Please don't close this window. This may take a few moments.
+              </p>
+              {form.uploads.length > 0 && (
+                <div className="mt-4 bg-gray-100 rounded-lg p-3">
+                  <p className="text-xs text-gray-600">
+                    {form.uploads.length} file(s) being processed
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Main Form Container */}
-        <div className="bg-white shadow-xl rounded-3xl overflow-hidden border border-gray-100">
+        <div className={`bg-white shadow-xl rounded-3xl overflow-hidden border border-gray-100 ${isSubmitting ? 'opacity-75' : ''}`}>
           {/* Form Header */}
           <div className="bg-gradient-to-r from-blue-600 to-white-600 px-8 py-6 rounded-t-2xl shadow-md">
             <div className="flex items-center justify-between">
@@ -198,7 +255,8 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
               </div>
               <button
                 onClick={handleBack}
-                className="flex items-center bg-gray-100 px-4 py-2 text-black text-sm font-medium rounded-xl transition-all duration-200 backdrop-blur-sm border border-black/30 hover:bg-gray-200"
+                disabled={isSubmitting}
+                className="flex items-center bg-gray-100 px-4 py-2 text-black text-sm font-medium rounded-xl transition-all duration-200 backdrop-blur-sm border border-black/30 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -218,10 +276,11 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
               </label>
               <input
                 type="text"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 text-gray-900 placeholder-gray-400 hover:border-gray-300"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 text-gray-900 placeholder-gray-400 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Brief description of your complaint"
                 value={form.title}
                 onChange={(e) => handleChange('title', e.target.value)}
+                disabled={isSubmitting}
               />
             </div>
 
@@ -236,15 +295,18 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Category</label>
                   <select
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 bg-white text-gray-900"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 bg-white text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                     value={form.categoryId}
                     onChange={(e) => {
                       handleChange('categoryId', e.target.value);
                       handleChange('subCategoryId', '');
                       handleChange('issueOptionId', '');
                     }}
+                    disabled={categoriesLoading || isSubmitting}
                   >
-                    <option value="">Select category</option>
+                    <option value="">
+                      {categoriesLoading ? 'Loading categories...' : 'Select category'}
+                    </option>
                     {categories?.map((cat) =>
                       cat ? (
                         <option key={cat.id} value={cat.id}>
@@ -253,6 +315,12 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                       ) : null
                     )}
                   </select>
+                  {categoriesLoading && (
+                    <div className="flex items-center text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600 mr-2"></div>
+                      Loading categories...
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -264,15 +332,23 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                       handleChange('subCategoryId', e.target.value);
                       handleChange('issueOptionId', '');
                     }}
-                    disabled={!form.categoryId}
+                    disabled={!form.categoryId || subcategoriesLoading || isSubmitting}
                   >
-                    <option value="">Select subcategory</option>
+                    <option value="">
+                      {subcategoriesLoading ? 'Loading subcategories...' : 'Select subcategory'}
+                    </option>
                     {subCategories?.map((sub: SubCategory) => (
                       <option key={sub.id} value={sub.id}>
-                      {sub.name}
+                        {sub.name}
                       </option>
                     ))}
                   </select>
+                  {subcategoriesLoading && (
+                    <div className="flex items-center text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600 mr-2"></div>
+                      Loading subcategories...
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -281,15 +357,23 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
                     value={form.issueOptionId}
                     onChange={(e) => handleChange('issueOptionId', e.target.value)}
-                    disabled={!form.subCategoryId}
+                    disabled={!form.subCategoryId || issuesLoading || isSubmitting}
                   >
-                    <option value="">Select issue</option>
+                    <option value="">
+                      {issuesLoading ? 'Loading issues...' : 'Select issue'}
+                    </option>
                     {issueOptions?.map((issue: IssueOption) => (
                       <option key={issue.id} value={issue.id}>
-                      {issue.name}
+                        {issue.name}
                       </option>
                     ))}
                   </select>
+                  {issuesLoading && (
+                    <div className="flex items-center text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600 mr-2"></div>
+                      Loading issues...
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -310,10 +394,11 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                 </div>
                 <textarea
                   rows={4}
-                  className="w-full px-4 py-3 border-2 border-orange-200 rounded-xl focus:border-orange-400 focus:ring-0 transition-all duration-200 resize-none text-gray-900 placeholder-orange-400"
+                  className="w-full px-4 py-3 border-2 border-orange-200 rounded-xl focus:border-orange-400 focus:ring-0 transition-all duration-200 resize-none text-gray-900 placeholder-orange-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Please provide a detailed description of your complaint..."
                   value={form.customDescription}
                   onChange={(e) => handleChange('customDescription', e.target.value)}
+                  disabled={isSubmitting}
                 />
               </div>
             )}
@@ -330,49 +415,46 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                   <label className="block text-sm font-medium text-gray-700">Device/Platform</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="e.g., Windows 11, iPhone 15"
                     value={form.device}
                     onChange={(e) => handleChange('device', e.target.value)}
+                    disabled={isSubmitting}
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Preferred Contact Method</label>
-
-
-<select
-  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 bg-white text-gray-900"
-  value={form.submissionPreference}
-  onChange={(e) => handleChange('submissionPreference', e.target.value)}
->
-  <option value="">Select contact method</option>
-  {submissionPreferenceEnum.options.map((option) => (
-    <option key={option} value={option}>
-      {option.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-    </option>
-  ))}
-</select>
-
-
-
+                  <select
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 bg-white text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                    value={form.submissionPreference}
+                    onChange={(e) => handleChange('submissionPreference', e.target.value)}
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Select contact method</option>
+                    {submissionPreferenceEnum.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Priority Level</label>
-                  {/* we will be displaying the priority level options here from the priority enum  */}
                   <select
-  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 bg-white text-gray-900"
-  value={form.priority}
-  onChange={(e) => handleChange('priority', e.target.value)}
->
-  <option value="">Select priority</option>
-  {priorityEnum.options.map((option) => (
-    <option key={option} value={option}>
-      {option.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-    </option>
-  ))}
-</select>
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-0 transition-all duration-200 bg-white text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                    value={form.priority}
+                    onChange={(e) => handleChange('priority', e.target.value)}
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Select priority</option>
+                    {priorityEnum.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
@@ -390,7 +472,8 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -408,7 +491,7 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                   isDragOver
                     ? 'border-purple-400 bg-purple-100'
                     : 'border-purple-300 bg-white hover:border-purple-400 hover:bg-purple-50'
-                }`}
+                } ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 <div className="flex flex-col items-center">
                   <svg className="w-12 h-12 text-purple-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,12 +510,13 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                 className="hidden"
                 onChange={(e) => handleFileSelect(e.target.files)}
                 accept="image/*,video/*,.pdf,.doc,.docx,.txt,.log"
+                disabled={isSubmitting}
               />
 
               {/* Uploaded Files */}
               <div className="mt-6 space-y-4">
                 {form.uploads.map((upload, index) => (
-                  <div key={index} className="bg-white border-2 border-purple-200 rounded-xl p-4 transition-all duration-200 hover:shadow-md">
+                  <div key={index} className={`bg-white border-2 border-purple-200 rounded-xl p-4 transition-all duration-200 hover:shadow-md ${isSubmitting ? 'opacity-75' : ''}`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -448,7 +532,8 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                       <button
                         type="button"
                         onClick={() => removeUpload(index)}
-                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                        disabled={isSubmitting}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -461,19 +546,21 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
                         <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">Description</label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-0 transition-all duration-200 text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-0 transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                           placeholder="What does this file show?"
                           value={upload.note}
                           onChange={(e) => updateUpload(index, 'note', e.target.value)}
+                          disabled={isSubmitting}
                         />
                       </div>
                       
                       <div className="space-y-1">
                         <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">File Type</label>
                         <select
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-0 transition-all duration-200 text-sm bg-white"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-0 transition-all duration-200 text-sm bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                           value={upload.type}
                           onChange={(e) => updateUpload(index, 'type', e.target.value)}
+                          disabled={isSubmitting}
                         >
                           <option value="">Select type</option>
                           <option value="Screenshot">📸 Screenshot</option>
@@ -502,34 +589,50 @@ const updateUpload = (index: number, key: 'note' | 'type', value: string) => {
             {/* Submit Section */}
             <div className="border-t-2 border-gray-100 pt-8">
               <div className="flex flex-col sm:flex-row gap-4">
-                {/* <button
-                  type="button"
-                  className="flex-1 px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200"
-                >
-                  Save as Draft
-                </button> */}
                 <button
                   type="submit"
-                  className="flex-1 text-white font-bold py-4 bg-blue-600 px-8 rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition-all duration-200"
+                  className={`flex-1 text-white font-bold py-4 px-8 rounded-xl shadow-xl transition-all duration-200 ${
+                    isSubmitting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 hover:shadow-2xl transform hover:-translate-y-0.5'
+                  }`}
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                 >
                   <div className="flex items-center justify-center">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                    Submit Complaint
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+                        {uploadProgress || 'Submitting...'}
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        Submit Complaint
+                      </>
+                    )}
                   </div>
                 </button>
               </div>
               
-              {/* <div className="mt-6 text-center">
-                <p className="text-sm text-gray-500 mb-2">
-                  📞 Need immediate assistance? Call our hotline: <span className="font-semibold text-red-600">1-800-COMPLAINTS</span>
-                </p>
-                <p className="text-xs text-gray-400">
-                  We take all complaints seriously and aim to respond within 24-48 hours
-                </p>
-              </div> */}
+              {isSubmitting && (
+                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-blue-800">
+                        <strong>Please wait:</strong> Your complaint is being processed. Do not refresh or close this page.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
