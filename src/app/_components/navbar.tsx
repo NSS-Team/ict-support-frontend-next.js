@@ -15,16 +15,7 @@ import { SignOutButton } from '@clerk/nextjs';
 import { api } from '~/trpc/react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Notification } from '~/types/notifications/Notification';
-// import type {getnotificationsResponse} from '~/types/responseTypes/notificationsResponses';
 
-// interface Notification {
-//   id: number;
-//   message: string;
-//   status: string | null;
-//   createdAt: string;
-//   read: boolean;
-//   priority: 'high' | 'medium' | 'low';
-// }
 
 const Navbar = () => {
   const [totalUnread, setTotalUnread] = useState(0);
@@ -35,11 +26,16 @@ const Navbar = () => {
   const { data: getNotificationsResponse } = api.notifications.getNotifications.useQuery({
     offset: notificationOffset,
   });
-
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
+  // mark a single notification as read api
+  const { mutate: markNotificationAsRead } = api.notifications.markNotificationAsRead.useMutation();
+  // mark all notifications as read api
+  const { mutate: markAllNotificationsAsRead } = api.notifications.markAllNotificationsAsRead.useMutation();
+
   useEffect(() => {
-    const rawData = getNotificationsResponse?.data;
+    const rawData = getNotificationsResponse;
+    console.log('Raw Notifications Data:', rawData);
     if (!rawData) return;
 
     const rawNotifications = rawData.notifications || [];
@@ -64,8 +60,9 @@ const Navbar = () => {
 
     const transformed: Notification[] = (rawNotifications as Notification[]).map((notif: Notification): Notification => ({
       ...notif,
-      read: false,
+      read: notif.read ?? false, // Use value from backend or fallback to false
     }));
+
 
     if (transformed.length > 0) {
       setNotifications((prev) => [...prev, ...transformed]);
@@ -82,8 +79,6 @@ const Navbar = () => {
       setTotalUnread(Number(rawData.totalUnread));
     }
   }, [getNotificationsResponse]);
-
-
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -107,16 +102,18 @@ const Navbar = () => {
         notif.id === id ? { ...notif, read: true } : notif
       )
     );
+    markNotificationAsRead({ id });
     setTotalUnread((prev) => Math.max(prev - 1, 0));
 
   };
 
-const markAllAsRead = () => {
-  setNotifications((prev) =>
-    prev.map((notif) => ({ ...notif, read: true }))
-  );
-  setTotalUnread(0); // Reset counter
-};
+  const markAllAsRead = () => {
+    setNotifications((prev) =>
+      prev.map((notif) => ({ ...notif, read: true }))
+    );
+    markAllNotificationsAsRead();
+    setTotalUnread(0); // Reset counter
+  };
 
 
   const deleteNotification = (id: number) => {
@@ -214,7 +211,7 @@ const markAllAsRead = () => {
                               New Notification
                             </p>
                             <div className="flex items-center gap-1 flex-shrink-0">
-                              {!notification.read && (
+                              {notification.status !== 'read' && (
                                 <button
                                   onClick={() => markAsRead(notification.id)}
                                   className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-green-600 transition-colors"
@@ -223,6 +220,7 @@ const markAllAsRead = () => {
                                   <Check className="w-3 h-3" />
                                 </button>
                               )}
+
                               <button
                                 onClick={() => deleteNotification(notification.id)}
                                 className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-red-600 transition-colors"

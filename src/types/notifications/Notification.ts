@@ -1,5 +1,4 @@
-
-import { read } from 'fs';
+  
 import z from 'zod';
 
 export const NotificationSchema = z.object({

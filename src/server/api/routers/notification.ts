@@ -35,13 +35,12 @@ export const notificationRouter = createTRPCRouter({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
         const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/dash`;
-        const res = await fetch(`${BASE_URL}/markAsRead`, {
+        const res = await fetch(`${BASE_URL}/markAsRead/${input.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${ctx.token}`,
           },
-          body: JSON.stringify({ id: input.id }),
         });
 
         const json = await res.json();
