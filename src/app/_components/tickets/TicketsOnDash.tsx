@@ -19,7 +19,7 @@ const TicketsOnDash = ({ tickets, isLoading, error }: TicketsOnDashProps) => {
 
     const Router = useRouter();
     return (
-        <div className="flex flex-col items-center h-full mx-10">
+        <div className="flex flex-col items-center h-full mx-10 pt-6">
             <TicketCategoryTabs/>
 
         {/* if the data is not loaded yet then we will show the skeleton loader */}

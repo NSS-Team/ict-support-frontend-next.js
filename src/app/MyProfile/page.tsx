@@ -7,6 +7,8 @@ import {
   MapPin, Briefcase, Award, Globe, CheckCircle2,
   XCircle, Timer, Hash, Users, ArrowLeft
 } from 'lucide-react';
+import {useUser} from '@clerk/nextjs';
+import Unauthorized from '../_components/unauthorized/unauthorized';
 
 // User info type based on API response
 // interface UserInfo {
@@ -29,16 +31,19 @@ import {
 
 export default function MyProfilePage() {
   // Get current user ID (you might get this from auth context or session)
-  const [currentUserId] = useState<string>('current-user-id'); // Replace with actual current user ID
+  // const [currentUserId] = useState<string>('current-user-id'); // Replace with actual current user ID
+  const { isLoaded, isSignedIn, user } = useUser();
 
-  const { 
-    data: userInfo, 
-    isLoading, 
-    isError, 
-    refetch 
-  } = api.users.getMyInfo.useQuery(undefined, {
-    enabled: !!currentUserId
+  const { data: userInfo, isLoading, isError, refetch } = api.users.getMyInfo.useQuery(undefined, {
+    enabled: !!user
   });
+
+  // 
+  if (!isSignedIn) {
+    return (
+      <Unauthorized />
+    );
+  }
 
   const getRoleColor = (role: string) => {
     const colors = {
@@ -145,24 +150,23 @@ export default function MyProfilePage() {
     );
   }
 
-  const user = userInfo.data;
+  
+
+  const userData = userInfo.data;
+
 
   return (
-    <div className="min-h-screen bg-gray-50">
+
+    
+
+    <div className="min-h-screen pb-20 bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => window.history.back()}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Back
-                </button>
-                <div className="border-l border-gray-300 h-8 mx-2"></div>
+                
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
                   <p className="text-gray-600 mt-1">Manage your personal information and account settings</p>
@@ -185,9 +189,9 @@ export default function MyProfilePage() {
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <div className="p-6 text-center">
                 <div className="relative inline-block mb-4">
-                  {user.picUrl ? (
+                  {userData.picUrl ? (
                     <img
-                      src={user.picUrl}
+                      src={userData.picUrl}
                       alt="Profile"
                       className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
                       onError={(e) => {
@@ -198,7 +202,7 @@ export default function MyProfilePage() {
                         if (parent) {
                           parent.innerHTML = `
                             <div class="w-24 h-24 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center">
-                              <span class="text-2xl font-bold text-gray-600">${getInitials(user.firstName, user.lastName)}</span>
+                              <span class="text-2xl font-bold text-gray-600">${getInitials(userData.firstName, userData.lastName)}</span>
                             </div>
                           `;
                         }
@@ -206,43 +210,43 @@ export default function MyProfilePage() {
                     />
                   ) : (
                     <div className="w-24 h-24 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center">
-                      <span className="text-2xl font-bold text-gray-600">{getInitials(user.firstName, user.lastName)}</span>
+                      <span className="text-2xl font-bold text-gray-600">{getInitials(userData.firstName, userData.lastName)}</span>
                     </div>
                   )}
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
                 </div>
 
                 <h2 className="text-xl font-bold text-gray-900 mb-1">
-                  {`${user.firstName} ${user.lastName}`}
+                  {`${userData.firstName} ${userData.lastName}`}
                 </h2>
-                {user.designation && (
-                  <p className="text-gray-600 mb-3">{user.designation}</p>
+                {userData.designation && (
+                  <p className="text-gray-600 mb-3">{userData.designation}</p>
                 )}
 
                 <div className="flex flex-col gap-2 mb-4">
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-medium ${getRoleColor(user.role)}`}>
-                    {getRoleIcon(user.role)}
-                    <span>{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-medium ${getRoleColor(userData.role)}`}>
+                    {getRoleIcon(userData.role)}
+                    <span>{userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}</span>
                   </div>
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-medium ${getApprovalStatus(user.is_approved).color}`}>
-                    {getApprovalStatus(user.is_approved).icon}
-                    <span>{getApprovalStatus(user.is_approved).label}</span>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-medium ${getApprovalStatus(userData.is_approved).color}`}>
+                    {getApprovalStatus(userData.is_approved).icon}
+                    <span>{getApprovalStatus(userData.is_approved).label}</span>
                   </div>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-center justify-center gap-2">
                     <Mail className="w-4 h-4" />
-                    <span>{user.email}</span>
+                    <span>{userData.email}</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <Phone className="w-4 h-4" />
-                    <span>{user.phone}</span>
+                    <span>{userData.phone}</span>
                   </div>
-                  {user.department && (
+                  {userData.department && (
                     <div className="flex items-center justify-center gap-2">
                       <Building className="w-4 h-4" />
-                      <span>{user.department}</span>
+                      <span>{userData.department}</span>
                     </div>
                   )}
                 </div>
@@ -263,7 +267,7 @@ export default function MyProfilePage() {
                     <Calendar className="w-5 h-5 text-blue-600" />
                     <div>
                       <p className="text-sm text-gray-600">Member Since</p>
-                      <p className="font-semibold text-gray-900">{formatDate(user.createdAt)}</p>
+                      <p className="font-semibold text-gray-900">{formatDate(userData.createdAt)}</p>
                     </div>
                   </div>
                 </div>
@@ -273,7 +277,7 @@ export default function MyProfilePage() {
                     <Clock className="w-5 h-5 text-emerald-600" />
                     <div>
                       <p className="text-sm text-gray-600">Last Updated</p>
-                      <p className="font-semibold text-gray-900">{formatLastUpdated(user.updatedAt)}</p>
+                      <p className="font-semibold text-gray-900">{formatLastUpdated(userData.updatedAt)}</p>
                     </div>
                   </div>
                 </div>
@@ -325,7 +329,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <User className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{user.firstName}</span>
+                      <span className="text-gray-900 font-medium">{userData.firstName}</span>
                     </div>
                   </div>
 
@@ -336,7 +340,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <User className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{user.lastName}</span>
+                      <span className="text-gray-900 font-medium">{userData.lastName}</span>
                     </div>
                   </div>
 
@@ -347,7 +351,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <Mail className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{user.email}</span>
+                      <span className="text-gray-900 font-medium">{userData.email}</span>
                     </div>
                   </div>
 
@@ -358,7 +362,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <Phone className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{user.phone || 'Not provided'}</span>
+                      <span className="text-gray-900 font-medium">{userData.phone || 'Not provided'}</span>
                     </div>
                   </div>
 
@@ -369,7 +373,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <Building className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{user.department || 'Not assigned'}</span>
+                      <span className="text-gray-900 font-medium">{userData.department || 'Not assigned'}</span>
                     </div>
                   </div>
 
@@ -380,7 +384,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <Briefcase className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{user.designation || 'Not specified'}</span>
+                      <span className="text-gray-900 font-medium">{userData.designation || 'Not specified'}</span>
                     </div>
                   </div>
 
@@ -391,7 +395,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <MapPin className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{user.officeNumber || 'Not assigned'}</span>
+                      <span className="text-gray-900 font-medium">{userData.officeNumber || 'Not assigned'}</span>
                     </div>
                   </div>
 
@@ -402,10 +406,10 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex items-center gap-3">
-                        {getRoleIcon(user.role)}
-                        <span className="text-gray-900 font-medium">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
+                        {getRoleIcon(userData.role)}
+                        <span className="text-gray-900 font-medium">{userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}</span>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(user.role)}`}>
+                      <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(userData.role)}`}>
                         Active
                       </div>
                     </div>

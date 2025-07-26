@@ -156,12 +156,14 @@ const Navbar = () => {
   // };
 
   return (
-    <header className="w-full h-16 bg-white px-6 flex items-center justify-between border-b border-gray-200 shadow-sm">
+    <header className="w-full fixed top-0  h-16 bg-white px-6 flex items-center justify-between z-50 md:left-16 md:w-[calc(100%-4rem)]">
+
       {/* Left Section */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">N</span>
+            {/* <span className="text-white font-bold text-lg">N</span> */}
+            {/* here we show the nust logo */}
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">NSS</h1>

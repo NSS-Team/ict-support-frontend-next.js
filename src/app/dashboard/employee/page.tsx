@@ -47,8 +47,8 @@ export default function EmployeePage() {
     }
 
   return (
-    <div className="flex min-h-screen w-screen">
-      <Sidebar />
+    <div className="flex min-h-screen w-screen overflow-x-hidden">
+      {/* <Sidebar /> */}
       <SecurityCodeHandler
         showModal={showModal}
         setShowModal={setShowModal}

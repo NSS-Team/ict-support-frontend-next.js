@@ -8,6 +8,7 @@ import {TRPCReactProvider} from '~/trpc/react'
 import '~/styles/globals.css'
 import { ToastProvider } from './_components/ToastProvider'
 import Footer from './_components/footer/footer'
+import Sidebar from './_components/Sidebar'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -35,10 +36,18 @@ export default function RootLayout({
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <TRPCReactProvider>
-            
           <ToastProvider>
-          <Navbar />
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <div className="flex min-h-screen">
+              <Sidebar />
+              <main className="mt-16 flex-1">
+                <div className='md:ml-16'>
+                {children}
+                </div>
+                </main>
+            </div>
+          </div>
           <Footer />
           </ToastProvider>
           </TRPCReactProvider>

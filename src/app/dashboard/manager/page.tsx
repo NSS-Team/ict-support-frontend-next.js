@@ -54,8 +54,8 @@ export default function ManagerPage() {
     </div>;
   }
   return (
-    <div className="flex min-h-screen w-screen">
-      <Sidebar />
+    <div className="flex h-[100%] w-[100%] overflow-x-hidden">
+      {/* <Sidebar /> */}
       <SecurityCodeHandler
         showModal={showModal}
         setShowModal={setShowModal}
@@ -64,7 +64,7 @@ export default function ManagerPage() {
         retry={retry}
       />
 
-      <main className="flex-1 bg-white overflow-y-hidden mr-auto ml-auto">
+      <main className="flex-1 bg-white overflow-y-hidden mr-auto ml-auto pb-20">
 
         {/* this is where the tickets will be displayed, this component has the tabs and the ticket cards */}
         <TicketsOnDash tickets={tickets?.data} isLoading={ticketsLoading} error={ticketsError ? ticketsError.message : undefined} />
