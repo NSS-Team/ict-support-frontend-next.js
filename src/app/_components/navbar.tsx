@@ -161,9 +161,10 @@ const Navbar = () => {
       {/* Left Section */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 flex items-center justify-center">
             {/* <span className="text-white font-bold text-lg">N</span> */}
             {/* here we show the nust logo */}
+            <img src="/nust-seeklogo.png" alt="NUST Logo" className="w-8 h-8" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">NSS</h1>

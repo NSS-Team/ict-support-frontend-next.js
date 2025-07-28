@@ -17,19 +17,22 @@ import Link from 'next/link';
 import type { log } from '~/types/logs/log';
 import { useEffect } from 'react';
 import { useToast } from '~/app/_components/ToastProvider';
+import CloseTicketPopup from '~/app/_components/teams/closeTicketPopup';
 
 export default function TicketDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { isSignedIn, user, isLoaded } = useUser();
-  const {addToast} = useToast();
+  const { addToast } = useToast();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const id = typeof params.id === 'string' ? params.id : '';
   const [isMyTeamPopupOpen, setIsMyTeamPopupOpen] = useState(false);
   const [isForwardTeamPopupOpen, setIsForwardTeamPopupOpen] = useState(false);
-  const [shouldFetchTeams , setShouldFetchTeams] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+
+  const [shouldFetchTeams, setShouldFetchTeams] = useState(false);
   const [shouldFetchMyTeamMembers, setShouldFetchMyTeamMembers] = useState(false);
-  
+
 
   // api to fetch the ticket details
   const { data: ticket, isLoading, error } = api.complaints.getComplainInfo.useQuery({ id });
@@ -53,25 +56,25 @@ export default function TicketDetailPage() {
   // const MyTeamName: string | null = user?.publicMetadata?.teamName as string | null;
 
 
-    useEffect(() => {
-  if (isDeleteSuccess) {
-    const role = user?.publicMetadata?.role;
-    if (role === 'employee') {
-      router.replace('/dashboard/employee');
-      router.refresh();
-      addToast('Complaint deleted successfully!', 'success');
-    } else if (role === 'admin') {
-      router.replace('/dashboard/admin');
-      router.refresh();
-      addToast('Complaint deleted successfully!', 'success');
+  useEffect(() => {
+    if (isDeleteSuccess) {
+      const role = user?.publicMetadata?.role;
+      if (role === 'employee') {
+        router.replace('/dashboard/employee');
+        router.refresh();
+        addToast('Complaint deleted successfully!', 'success');
+      } else if (role === 'admin') {
+        router.replace('/dashboard/admin');
+        router.refresh();
+        addToast('Complaint deleted successfully!', 'success');
+      }
     }
-  }
 
-  if (isDeleteError) {
-    console.error('Error deleting complaint:', deleteError);
-    alert('Failed to delete the complaint. Please try again later.');
-  }
-}, [isDeleteSuccess, isDeleteError, deleteError, user, router]);
+    if (isDeleteError) {
+      console.error('Error deleting complaint:', deleteError);
+      alert('Failed to delete the complaint. Please try again later.');
+    }
+  }, [isDeleteSuccess, isDeleteError, deleteError, user, router]);
 
   // // check if we need to fetch the teams 
   // useEffect(() => {
@@ -135,15 +138,15 @@ export default function TicketDetailPage() {
   }
 
   if (isDeleting) {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="flex flex-col items-center space-y-4">
-        <Loader />
-        <p className="text-sm text-gray-500">Deleting complaint...</p>
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader />
+          <p className="text-sm text-gray-500">Deleting complaint...</p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 
 
@@ -181,8 +184,8 @@ export default function TicketDetailPage() {
 
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center space-x-3">
-              {user?.publicMetadata?.role === 'worker' && (
-                <button className="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+              {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && (
+                <button className="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => setShowCloseModal(true)}>
                   <Clock className="h-4 w-4 mr-2" />
                   Close Ticket
                 </button>
@@ -542,6 +545,12 @@ export default function TicketDetailPage() {
             {<MyTeamPopup open={isMyTeamPopupOpen} setOpen={setIsMyTeamPopupOpen} complainId={id} assignedWorkerId={complaint?.assignedWorkerId} />}
 
             <ForwardTeamPopup open={isForwardTeamPopupOpen} setOpen={setIsForwardTeamPopupOpen} complainId={id} MyTeamId={MyTeamId} />
+
+            <CloseTicketPopup
+              open={showCloseModal}
+              setOpen={setShowCloseModal}
+              ticketId={id}
+            />
 
           </div>
         </div>

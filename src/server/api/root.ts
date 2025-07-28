@@ -7,6 +7,7 @@ import { complaintsRouter } from "./routers/complaints";
 import { managerDashRouter } from "./routers/managerDash";
 import { notificationRouter } from "./routers/notification";
 import { userRouter } from "./routers/user";
+import { workerDashRouter } from "./routers/workerDash";
 
 /**
  * This is the primary router for your server.
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   managerDash: managerDashRouter,
   notifications: notificationRouter,
   users: userRouter,
+  workerDash: workerDashRouter,
 
 });
 

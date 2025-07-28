@@ -152,7 +152,7 @@ export const complaintsRouter = createTRPCRouter({
             },
         });
         const json = await res.json();
-        console.log("raw response of get complaint logs", json);
+        console.log("raw response of get complaint logs", json.data);
         return json;
     }
     ),
@@ -173,5 +173,25 @@ export const complaintsRouter = createTRPCRouter({
     }),
 
 
-
+    // resolve a complaint 
+    resolveComplaint: publicProcedure.input(z.object({
+        complaintId: z.string(),
+        resolvedSummary: z.string().min(1, "Resolution summary is required"),
+        uploads: z.array(attachmentSchema).optional().default([]),
+    })).mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/resolveComplaint`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
+            },
+            body: JSON.stringify(input),
+        });
+        const json = await res.json();
+        console.log("raw response of resolve complaint", json);
+        // const validated = resolveComplaintResponseSchema.parse(json);
+        // console.log("validated response of resolve complaint", validated);
+        return json;
+    }),
 });

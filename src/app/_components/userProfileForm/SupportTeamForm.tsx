@@ -5,7 +5,6 @@ import InputField from './InputField';
 import SelectField from './SelectField';
 import type { supportStaffRoles } from '~/types/enums';
 import type { SupportStaffMember } from '~/types/user/supportStaffMemberSchema';
-import { supportStaffRolesEnum } from '~/types/enums';
 import { useUserStatus } from '~/store/loginCheck';
 import { useRouter } from 'next/navigation';
 import { UploadCloud, Users, CheckCircle, ArrowRight, Shield } from 'lucide-react';

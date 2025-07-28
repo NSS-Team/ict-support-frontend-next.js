@@ -33,6 +33,7 @@ export default function MyProfilePage() {
   // Get current user ID (you might get this from auth context or session)
   // const [currentUserId] = useState<string>('current-user-id'); // Replace with actual current user ID
   const { isLoaded, isSignedIn, user } = useUser();
+  const userRole = user?.publicMetadata.role || 'employee'; // Default to 'user' if role is not set
 
   const { data: userInfo, isLoading, isError, refetch } = api.users.getMyInfo.useQuery(undefined, {
     enabled: !!user
@@ -68,28 +69,28 @@ export default function MyProfilePage() {
     }
   };
 
-  const getApprovalStatus = (status: 0 | 1 | 2) => {
-    switch (status) {
-      case 1:
-        return {
-          label: 'Approved',
-          color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          icon: <CheckCircle2 className="w-4 h-4" />
-        };
-      case 2:
-        return {
-          label: 'Declined',
-          color: 'bg-red-50 text-red-700 border-red-200',
-          icon: <XCircle className="w-4 h-4" />
-        };
-      default:
-        return {
-          label: 'Pending',
-          color: 'bg-amber-50 text-amber-700 border-amber-200',
-          icon: <Timer className="w-4 h-4" />
-        };
-    }
-  };
+  // const getApprovalStatus = (status: 0 | 1 | 2) => {
+  //   switch (status) {
+  //     case 1:
+  //       return {
+  //         label: 'Approved',
+  //         color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  //         icon: <CheckCircle2 className="w-4 h-4" />
+  //       };
+  //     case 2:
+  //       return {
+  //         label: 'Declined',
+  //         color: 'bg-red-50 text-red-700 border-red-200',
+  //         icon: <XCircle className="w-4 h-4" />
+  //       };
+  //     default:
+  //       return {
+  //         label: 'Pending',
+  //         color: 'bg-amber-50 text-amber-700 border-amber-200',
+  //         icon: <Timer className="w-4 h-4" />
+  //       };
+  //   }
+  // };
 
   const getInitials = (firstName: string, lastName: string) => {
     const first = firstName && firstName.length > 0 ? firstName[0] : '';
@@ -228,10 +229,10 @@ export default function MyProfilePage() {
                     {getRoleIcon(userData.role)}
                     <span>{userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}</span>
                   </div>
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-medium ${getApprovalStatus(userData.is_approved).color}`}>
+                  {/* <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-medium ${getApprovalStatus(userData.is_approved).color}`}>
                     {getApprovalStatus(userData.is_approved).icon}
                     <span>{getApprovalStatus(userData.is_approved).label}</span>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-600">
@@ -378,7 +379,8 @@ export default function MyProfilePage() {
                   </div>
 
                   {/* Designation */}
-                  <div>
+
+                  {userRole !== 'manager' && userRole !== 'worker' && <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Job Title
                     </label>
@@ -386,7 +388,7 @@ export default function MyProfilePage() {
                       <Briefcase className="w-5 h-5 text-gray-600" />
                       <span className="text-gray-900 font-medium">{userData.designation || 'Not specified'}</span>
                     </div>
-                  </div>
+                  </div>}
 
                   {/* Office Number */}
                   <div>

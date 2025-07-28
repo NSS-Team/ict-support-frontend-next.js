@@ -3,8 +3,7 @@
 import { useState, useRef , useEffect} from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '~/trpc/react'; 
-import Sidebar from '../_components/Sidebar';
-import { priorityEnum, submissionPreferenceEnum, type SubmissionPreference } from '~/types/enums';
+import { priorityEnum, submissionPreferenceEnum } from '~/types/enums';
 import { uploadAttachment } from '~/utils/complaintAttachmentsUpload';
 import { useToast } from '../_components/ToastProvider';
 import type { IssueOption } from '~/types/categories/issueOptions';
