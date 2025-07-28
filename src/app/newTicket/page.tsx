@@ -8,10 +8,27 @@ import { uploadAttachment } from '~/utils/complaintAttachmentsUpload';
 import { useToast } from '../_components/ToastProvider';
 import type { IssueOption } from '~/types/categories/issueOptions';
 import type { SubCategory } from '~/types/categories/subCategory';
+import { useUser } from '@clerk/nextjs';
+import Loader from '~/app/_components/Loader';
+import LoginRequired from '~/app/_components/unauthorized/loginToContinue';
+
 
 export default function ComplaintForm() {
   const router = useRouter();
   const {addToast} = useToast();
+  const { user, isLoaded, isSignedIn } = useUser();
+
+  // below ifs are used for loading state and user verification
+      if (!isLoaded) {
+      return <div className="flex min-h-screen items-center justify-center">
+        <Loader />
+        <p className="text-gray-500 pl-5">Please wait, while we authorize you...</p>
+      </div>;
+      }
+      if(isLoaded && !isSignedIn) {
+          return <LoginRequired />;
+      }
+
   
   type Upload = { file: File; note: string; type: string };
   type FormState = {

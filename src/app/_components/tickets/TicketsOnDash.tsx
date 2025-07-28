@@ -11,11 +11,10 @@ import { useRouter } from "next/navigation";
 interface TicketsOnDashProps {
     tickets?: ticket[]; 
     isLoading?: boolean;
-    error?: string;
 }
 
 
-const TicketsOnDash = ({ tickets, isLoading, error }: TicketsOnDashProps) => {
+const TicketsOnDash = ({ tickets, isLoading}: TicketsOnDashProps) => {
 
     const Router = useRouter();
     return (

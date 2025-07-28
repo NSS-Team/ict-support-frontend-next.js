@@ -25,6 +25,11 @@ export const getTeamWorkersDataSchema = z.object({
     workerName: z.string(),
     status: teamWorkerStatusEnum,
     })),
+
+    manager: z.object({
+        managerId: z.string(),
+        managerName: z.string(),
+    }),
 });
 
 export const getTeamsDataSchema = z.object({

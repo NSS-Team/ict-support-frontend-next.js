@@ -18,6 +18,8 @@ import type { log } from '~/types/logs/log';
 import { useEffect } from 'react';
 import { useToast } from '~/app/_components/ToastProvider';
 import CloseTicketPopup from '~/app/_components/teams/closeTicketPopup';
+import LoginRequired from '~/app/_components/unauthorized/loginToContinue';
+import ErrorLoading from '~/app/_components/unauthorized/errorLoading';
 
 export default function TicketDetailPage() {
   const router = useRouter();
@@ -76,23 +78,6 @@ export default function TicketDetailPage() {
     }
   }, [isDeleteSuccess, isDeleteError, deleteError, user, router]);
 
-  // // check if we need to fetch the teams 
-  // useEffect(() => {
-  //   if (shouldFetchTeams) {
-  //     refetchLogs().then(() => {
-  //       setShouldFetchTeams(false);
-  //     });
-  //   }
-  // }, [shouldFetchTeams, refetchLogs]);
-
-  // // check if we need to fetch the my team members
-  // useEffect(() => {
-  //   if (shouldFetchMyTeamMembers) {
-  //     refetchLogs().then(() => {
-  //       setShouldFetchMyTeamMembers(false);
-  //     });
-  //   }
-  // }, [shouldFetchMyTeamMembers, refetchLogs]);
 
   if (isLoading || !isLoaded) {
     return (
@@ -107,35 +92,13 @@ export default function TicketDetailPage() {
 
   if (error || !ticket) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg border border-red-100 p-8 max-w-md mx-auto">
-          <div className="flex items-center gap-3 text-red-600 mb-4">
-            <div className="p-2 bg-red-50 rounded-full">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <span className="font-semibold">Unable to Load Ticket</span>
-          </div>
-          <p className="text-gray-600 mb-6">We encountered an error while loading the ticket details. Please try refreshing the page or contact support if the issue persists.</p>
-          <button
-            onClick={() => router.back()}
-            className="w-full px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
+      <ErrorLoading />
     );
   }
+  if(isLoaded && !isSignedIn) {
+          return <LoginRequired />;
+      }
 
-  if (!isSignedIn) {
-    return <div className="flex h-screen items-center justify-center bg-black">
-      <div className="justify-center items-center text-center p-20">
-        <p className="text-white text-xl font-bold ">Error | Please Sign In to access this page.</p>
-        {/* here we give the sign in link that takes the user to home page */}
-        <p><Link href="/" className="text-blue-500 hover:underline">Sign In/Sign Up</Link></p>
-      </div>
-    </div>;
-  }
 
   if (isDeleting) {
     return (

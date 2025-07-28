@@ -71,7 +71,7 @@ const Sidebar = () => {
         router.push('/MyTeam');
         setIsExpanded(false);
       },
-      roles : ['manager']
+      roles : ['manager', 'worker']
     },
     {
       name: 'Registrations',
@@ -141,8 +141,8 @@ const Sidebar = () => {
       )}
 
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex fixed left-0 top-0 h-screen bg-white z-40 flex-col transition-all duration-300 ${
-        isExpanded ? 'w-64' : 'w-16'
+      <aside className={`hidden md:flex fixed left-0 top-0 h-screen  bg-white z-40 flex-col transition-all duration-300 ${
+        isExpanded ? 'w-64' : 'w-16 '
       }`}>
         {/* Header space for hamburger button */}
         <div className="h-16 flex items-center justify-center">

@@ -1,48 +1,58 @@
 'use client';
-import { useState } from 'react';
 import { api } from '~/trpc/react';
 import {
-  User, Mail, Phone, Calendar, Badge, Clock,
-  Shield, Building, AlertCircle, Edit3, Settings,
-  MapPin, Briefcase, Award, Globe, CheckCircle2,
-  XCircle, Timer, Hash, Users, ArrowLeft
+  User, Mail, Phone, Calendar, Clock,
+  Shield, Building, AlertCircle, Settings,
+  MapPin, Briefcase, Award, Globe
 } from 'lucide-react';
 import {useUser} from '@clerk/nextjs';
-import Unauthorized from '../_components/unauthorized/unauthorized';
-
-// User info type based on API response
-// interface UserInfo {
-//   id: string;
-//   firstName: string;
-//   lastName: string;
-//   email: string;
-//   picUrl: string;
-//   officeNumber: string | null;
-//   department: string | null;
-//   designation: string | null;
-//   phone: string;
-//   locationId: number | null;
-//   role: "employee" | "manager" | "admin" | "worker";
-//   is_approved: 0 | 1 | 2; // 0: pending, 1: approved, 2: declined
-//   codesGenerated: number;
-//   createdAt: Date;
-//   updatedAt: Date;
-// }
+import Loader from '../_components/Loader';
+import LoginRequired from '../_components/unauthorized/loginToContinue';
 
 export default function MyProfilePage() {
   // Get current user ID (you might get this from auth context or session)
   // const [currentUserId] = useState<string>('current-user-id'); // Replace with actual current user ID
   const { isLoaded, isSignedIn, user } = useUser();
-  const userRole = user?.publicMetadata.role || 'employee'; // Default to 'user' if role is not set
+  const userRole = user?.publicMetadata.role || 'user'; // Default to 'user' if role is not set
 
+  // fetching the user info for the profile page
   const { data: userInfo, isLoading, isError, refetch } = api.users.getMyInfo.useQuery(undefined, {
     enabled: !!user
   });
 
-  // 
-  if (!isSignedIn) {
+
+  if (!isLoaded || isLoading) {
     return (
-      <Unauthorized />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader />
+      </div>
+    );
+  }
+  // Check if user is logged in
+  if (isLoaded && !isSignedIn) {
+    return (
+      <LoginRequired />
+    );
+  }
+
+  if (!user || isError || !userInfo?.data) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center max-w-md">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Profile</h3>
+            <p className="text-gray-600 mb-6">We encountered an issue while loading your profile information.</p>
+            <button 
+              onClick={() => refetch()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -117,42 +127,7 @@ export default function MyProfilePage() {
     return formatDate(updated);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your profile...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError || !userInfo?.data) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center max-w-md">
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Profile</h3>
-            <p className="text-gray-600 mb-6">We encountered an issue while loading your profile information.</p>
-            <button 
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   
-
   const userData = userInfo.data;
 
 

@@ -9,6 +9,9 @@ import { api } from '~/trpc/react';
 import SecurityCodeHandler from "~/app/_components/securityCodes/SecurityCodesPopupHandler";
 import TicketsOnDash from "~/app/_components/tickets/TicketsOnDash";
 import { useUser } from "@clerk/nextjs";
+import LoginRequired from "~/app/_components/unauthorized/loginToContinue";
+import Unauthorized from "~/app/_components/unauthorized/unauthorized";
+import ErrorLoading from "~/app/_components/unauthorized/errorLoading";
 
 export default function EmployeePage() {
   const { showModal, setShowModal, isError, codes, retry, userLoaded,
@@ -19,32 +22,31 @@ export default function EmployeePage() {
   const { data: tickets, isLoading: ticketsLoading, error: ticketsError } = api.dash.getComplainsEmp.useQuery();
 
   //   this verifies if the user has the right permissions to access this page
-  const { user } = useUser();
-    if (!userLoaded) {
+  const { user, isLoaded, isSignedIn } = useUser();
+  
+
+
+  // below 3 if's are used to handle the loading state, unauthorized access, and user role verification
+    // and the same is being used in all the dashboard pages
+    if (!isLoaded) {
     return <div className="flex min-h-screen items-center justify-center">
       <Loader />
       <p className="text-gray-500 pl-5">Please wait, while we authorize you...</p>
     </div>;
     }
-
-    if(!user) {
-        return <div className="flex h-screen items-center justify-center bg-black">
-            <div className="justify-center items-center text-center p-20">
-            <p className="text-white text-xl font-bold ">Error | user not found</p>
-            </div>
-        </div>;
+    if(!user || ticketsError) {
+      return <ErrorLoading />;
     }
-
+    if(isLoaded && !isSignedIn) {
+        return <LoginRequired />;
+    }
     if(user.publicMetadata.role !== 'employee') {
       
       console.log(user.publicMetadata.role);
 
-        return <div className="flex h-screen items-center justify-center bg-black">
-            <div className="justify-center items-center text-center p-20">
-            <p className="text-white text-xl font-bold ">Unauthorized | You do not have permission to access this page.</p>
-            </div>
-        </div>;
+        return <Unauthorized />;
     }
+
 
   return (
     <div className="flex min-h-screen w-screen overflow-x-hidden">
@@ -60,7 +62,7 @@ export default function EmployeePage() {
       <main className="flex-1 bg-white overflow-y-hidden mr-auto ml-auto">
 
         {/* this is where the tickets will be displayed, this component has the tabs and the ticket cards */}
-        <TicketsOnDash tickets={tickets?.data} isLoading={ticketsLoading} error={ticketsError ? ticketsError.message : undefined} />
+        <TicketsOnDash tickets={tickets?.data} isLoading={ticketsLoading} />
 
       </main>
     </div>
