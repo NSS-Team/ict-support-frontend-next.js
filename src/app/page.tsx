@@ -66,7 +66,7 @@ export default function Home() {
 
   if (!isLoaded || isLoading) {
     return (
-      <div className="grid h-h-[calc(100vh-4rem)] place-items-center">
+      <div className="main bg-white h-[calc(100vh-4rem)] flex items-center justify-center">
         <Loader />
       </div>
     );

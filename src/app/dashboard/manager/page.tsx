@@ -36,18 +36,17 @@ export default function ManagerPage() {
       <p className="text-gray-500 pl-5">Please wait, while we authorize you...</p>
     </div>;
   }
-  if(!user || ticketsError) {
-        return <ErrorLoading />;
-      }
   if (isLoaded && !isSignedIn) {
     return <LoginRequired />;
   }
   if (user.publicMetadata.role !== 'manager') {
-
-    console.log(user.publicMetadata.role);
-
     return <Unauthorized />;
   }
+  if(!user || ticketsError) {
+        return <ErrorLoading />;
+      }
+  
+  
 
 
   return (

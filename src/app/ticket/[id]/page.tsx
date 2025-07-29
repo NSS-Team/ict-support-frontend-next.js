@@ -89,15 +89,16 @@ export default function TicketDetailPage() {
       </div>
     );
   }
+  if(isLoaded && !isSignedIn) {
+          return <LoginRequired />;
+      }
 
   if (error || !ticket) {
     return (
       <ErrorLoading />
     );
   }
-  if(isLoaded && !isSignedIn) {
-          return <LoginRequired />;
-      }
+  
 
 
   if (isDeleting) {
