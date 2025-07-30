@@ -3,7 +3,7 @@ import { createTRPCRouter } from "../trpc";
 import { publicProcedure } from "../trpc";
 import { z } from "zod";
 import { priorityEnum, submissionPreferenceEnum } from "~/types/enums";
-import { getCategoryResponseSchema } from "~/types/responseTypes/categories";
+import { getCategoryResponseSchema, getIssueOptionResponseSchema, getSubCategoryResponseSchema } from "~/types/responseTypes/categories";
 import { getComplainInfoResponseSchema } from "~/types/responseTypes/ticketResponses";
 import { attachmentSchema } from "~/types/attachments";
 import { generateComplainResponseSchema } from "~/types/responseTypes/ticketResponses";
@@ -11,6 +11,7 @@ import { generateComplainResponseSchema } from "~/types/responseTypes/ticketResp
 export const complaintsRouter = createTRPCRouter({
 
     // get all categories
+    // validated response
     getCategories: publicProcedure.query(async ({ ctx }) => {
         const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
         const res = await fetch(`${BASE_URL}/getCategories`, {
@@ -37,7 +38,9 @@ export const complaintsRouter = createTRPCRouter({
             });
             const json = await res.json();
             console.log("raw response", json);
-            return json;
+            const validated = getSubCategoryResponseSchema.parse(json);
+            console.log("validated response", validated);
+            return validated;
         }),
 
     // get issue options by subcategory ID
@@ -51,10 +54,13 @@ export const complaintsRouter = createTRPCRouter({
             });
             const json = await res.json();
             console.log("raw response", json);
-            return json;
+            const validated = getIssueOptionResponseSchema.parse(json);
+            console.log("validated response", validated);
+            return validated;
         }),
 
     // get complaint info by complaint ID
+    // validated response
     getComplainInfo: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
         const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
         const res = await fetch(`${BASE_URL}/getComplainInfo/${input.id}`, {

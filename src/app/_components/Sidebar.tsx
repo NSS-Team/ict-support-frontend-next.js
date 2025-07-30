@@ -18,7 +18,8 @@ const Sidebar = () => {
     typeof user?.publicMetadata?.role === 'string'
       ? user.publicMetadata.role
       : 'user';
-  const userRoles = userRolesEnum.options;
+  // const userRoles = userRolesEnum.options;
+  const userApproved = user?.publicMetadata?.approved;
 
   const navItems = [
     {
@@ -79,7 +80,7 @@ const Sidebar = () => {
       color: 'black',
       size: 20,
       onClick: () => {
-        console.log('Registrations clicked');
+        router.push('/dashboard/admin/registrations');
         setIsExpanded(false);
       },
       roles: ['admin'],
@@ -118,7 +119,7 @@ const Sidebar = () => {
     <>
       {/* Hamburger Button - Fixed position */}
       {/* only display if the user is approved and not a guest */}
-      {user && user?.publicMetadata?.role !== 'user' && (
+      {user && user?.publicMetadata?.role !== 'user' &&  user?.publicMetadata?.approved && (
         <div>
       <button
         onClick={toggleSidebar}

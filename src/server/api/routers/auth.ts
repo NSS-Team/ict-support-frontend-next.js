@@ -1,14 +1,4 @@
-// backend apis with which this file is dealing with
 
-/*
-router.post('/addProfile' , completeProfile ); //tested : working fine
-router.get('/login-check', loginCheck);  //tested : working fine
-router.post('/approve-user/:id', approveUser); // tested : working fine 
-router.post('/generate-codes', generateCodes); // working
-router.post('/login-with-code', loginWithCode); // working
-router.post('/update-password' , changePasswordAfterCodeLogin) //working
-
-*/
 // imports
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -83,7 +73,7 @@ export const authRouter = createTRPCRouter({
     }),
 
   // this is to approve a user
-  // calling this when the manager approves a user (from the admin dashboard)
+  // calling this when the admin approves a user (from the admin dashboard)
   approveUser: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -152,7 +142,7 @@ export const authRouter = createTRPCRouter({
     const json = await res.json();
     console.log('loginCheck raw response:', json); // Add this for debugging
     const validated = loginCheckResponseSchema.parse(json);
-    console.log('loginCheck response:', validated);
+    // console.log('loginCheck response:', validated);
     return validated;
   }),
 
@@ -170,7 +160,7 @@ export const authRouter = createTRPCRouter({
     const json = await res.json();
     console.log('generateCodes raw response:', json); // Add this for debugging
     const validated = generateCodesResponseSchema.parse(json);
-    console.log('generateCodes response:', validated);
+    // console.log('generateCodes response:', validated);
     return validated;
   }),
 });
