@@ -95,19 +95,19 @@ const Sidebar = () => {
       },
       roles: ['employee', 'worker', 'admin', 'manager'],
     },
-    {
-      name: 'Logout',
-      icon: LogOut,
-      color: '#EF4444',
-      size: 20,
-      red: true,
-      onClick: async () => {
-        await signOut();
-        router.replace('/');
-        setIsExpanded(false);
-      },
-      roles: ['employee', 'worker', 'admin', 'manager'],
-    },
+    // {
+    //   name: 'Logout',
+    //   icon: LogOut,
+    //   color: '#EF4444',
+    //   size: 20,
+    //   red: true,
+    //   onClick: async () => {
+    //     await signOut();
+    //     router.replace('/');
+    //     setIsExpanded(false);
+    //   },
+    //   roles: ['employee', 'worker', 'admin', 'manager'],
+    // },
   ];
 
   const toggleSidebar = () => {
@@ -142,7 +142,7 @@ const Sidebar = () => {
 
       {/* Desktop Sidebar */}
       <aside className={`hidden md:flex fixed left-0 top-0 h-screen  bg-white z-40 flex-col transition-all duration-300 ${
-        isExpanded ? 'w-64' : 'w-16 '
+        isExpanded ? 'w-64 shadow-xl' : 'w-16 shadow-lg'
       }`}>
         {/* Header space for hamburger button */}
         <div className="h-16 flex items-center justify-center">
@@ -152,13 +152,12 @@ const Sidebar = () => {
         <nav className="flex-1 px-2 py-4 space-y-2">
           {navItems
             .filter(item => item.roles.includes(userRole))
-            .map(({ name, icon: Icon, color, size, red, onClick }) => (
+            // .map(({ name, icon: Icon, color, size, red, onClick }) => (
+            .map(({ name, icon: Icon, color, size, onClick }) => (
               <button
                 key={name}
                 onClick={onClick}
-                className={`flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  red ? 'text-red-500 hover:bg-red-50' : 'text-gray-800 hover:bg-gray-200'
-                }`}
+                className="flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-800 hover:bg-gray-200"
               >
                 <Icon
                   className="flex-shrink-0"
@@ -180,22 +179,18 @@ const Sidebar = () => {
         <div className="flex justify-around items-center max-w-screen-sm mx-auto">
           {navItems
             .filter(item => item.roles.includes(userRole))
-            .map(({ name, icon: Icon, color, size, red, onClick }) => (
+            .map(({ name, icon: Icon, color, size, onClick }) => (
             <button
               key={name}
               onClick={onClick}
-              className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors min-w-0 ${
-                red ? 'text-red-500' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              className="flex flex-col items-center justify-center p-2 rounded-lg transition-colors min-w-0 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
               <Icon
                 className="mb-1"
                 size={size}
                 color={color}
               />
-              <span className={`text-xs font-medium truncate ${
-                red ? 'text-red-500' : 'text-gray-600'
-              }`}>
+              <span className="text-xs font-medium truncate text-gray-600">
               </span>
             </button>
           ))}

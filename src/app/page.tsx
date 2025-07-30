@@ -6,6 +6,7 @@ import Loader from '~/app/_components/Loader';
 import { api } from '~/trpc/react';
 import { useUserStatus } from '~/store/loginCheck';
 import type { UserRoles } from '~/types/enums';
+import CustomAuthForm from './_components/auth/AuthModal';
 
 
 export default function Home() {
@@ -79,6 +80,7 @@ export default function Home() {
       <div className="signInContainer m-auto">
         <SignIn routing="hash" />
         {/* <AuthModal open={true} onOpenChange={() => {}} /> */}
+        {/* <CustomAuthForm /> */}
       </div>
     </div>
   );

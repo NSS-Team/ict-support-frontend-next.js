@@ -214,21 +214,6 @@ export default function ComplaintForm() {
   }
 }, [generateComplain.isPending]);
 
-  // interface Category {
-  //   id: string;
-  //   name: string;
-  // }
-
-  // interface SubCategory {
-  //   id: string;
-  //   name: string;
-  // }
-
-  // interface IssueOption {
-  //   id: string | number;
-  //   name: string;
-  // }
-
   const isOther: boolean =
     issueOptions?.find((i: IssueOption) => i.id.toString() === form.issueOptionId)?.name === 'Other (specify)';
 
@@ -240,7 +225,7 @@ export default function ComplaintForm() {
 
         {/* Loading Overlay */}
         {isSubmitting && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
