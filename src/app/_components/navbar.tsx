@@ -10,6 +10,7 @@ import {
   X,
   Clock,
   AlertCircle,
+  ChevronDown,
 } from 'lucide-react';
 import { SignOutButton } from '@clerk/nextjs';
 import { api } from '~/trpc/react';
@@ -25,19 +26,147 @@ const Navbar = () => {
   const [hasMore, setHasMore] = useState(true);
   const [notificationOffset, setNotificationOffset] = useState(0);
   const notificationRef = useRef(null);
+  
+  // Swipe and scroll lock states
+  const [startY, setStartY] = useState(0);
+  const [currentY, setCurrentY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragThreshold] = useState(100); // Minimum swipe distance to close
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // api to fetch notifications
+  // API calls and state management (keep existing logic)
   const { data: getNotificationsResponse } = api.notifications.getNotifications.useQuery({
     offset: notificationOffset,
   }, {enabled: shouldFetchNotifications});
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // mark a single notification as read api
   const { mutate: markNotificationAsRead } = api.notifications.markNotificationAsRead.useMutation();
-  // mark all notifications as read api
   const { mutate: markAllNotificationsAsRead } = api.notifications.markAllNotificationsAsRead.useMutation();
 
-// useeffect to check if the user is logged in and fetch notifications
+  // Scroll lock effect - Prevent background scrolling when popup is open
+  useEffect(() => {
+    if (isNotificationOpen) {
+      // Disable scroll on body
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${window.scrollY}px`;
+    } else {
+      // Re-enable scroll on body
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+    };
+  }, [isNotificationOpen]);
+
+  // Touch event handlers for swipe down
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setStartY(e.touches[0]!.clientY);
+    setCurrentY(e.touches[0]!.clientY);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    
+    const touch = e.touches[0]!;
+    setCurrentY(touch.clientY);
+    
+    const deltaY = touch.clientY - startY;
+    
+    // Only allow downward swipe and only if at the top of the scrollable content
+    const scrollContainer = panelRef.current?.querySelector('.overflow-y-auto');
+    const isAtTop = scrollContainer?.scrollTop === 0;
+    
+    if (deltaY > 0 && isAtTop) {
+      // Prevent default to stop page scrolling
+      e.preventDefault();
+      
+      // Apply transform for visual feedback
+      if (panelRef.current) {
+        const translateY = Math.min(deltaY * 0.5, 200); // Damping effect
+        panelRef.current.style.transform = `translateY(${translateY}px)`;
+        panelRef.current.style.transition = 'none';
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    
+    const deltaY = currentY - startY;
+    
+    // Reset panel position
+    if (panelRef.current) {
+      panelRef.current.style.transform = '';
+      panelRef.current.style.transition = '';
+    }
+    
+    // Close if swiped down enough
+    if (deltaY > dragThreshold) {
+      setIsNotificationOpen(false);
+    }
+    
+    setIsDragging(false);
+    setStartY(0);
+    setCurrentY(0);
+  };
+
+  // Mouse event handlers for desktop drag support (optional)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setStartY(e.clientY);
+    setCurrentY(e.clientY);
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    
+    setCurrentY(e.clientY);
+    const deltaY = e.clientY - startY;
+    
+    if (deltaY > 0) {
+      if (panelRef.current) {
+        const translateY = Math.min(deltaY * 0.5, 200);
+        panelRef.current.style.transform = `translateY(${translateY}px)`;
+        panelRef.current.style.transition = 'none';
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging) return;
+    
+    const deltaY = currentY - startY;
+    
+    if (panelRef.current) {
+      panelRef.current.style.transform = '';
+      panelRef.current.style.transition = '';
+    }
+    
+    if (deltaY > dragThreshold) {
+      setIsNotificationOpen(false);
+    }
+    
+    setIsDragging(false);
+    setStartY(0);
+    setCurrentY(0);
+  };
+
+  // Keep all existing useEffects and functions...
   useEffect(() => {
     if (user) {
       setShouldFetchNotifications(true);
@@ -50,30 +179,10 @@ const Navbar = () => {
     if (!rawData) return;
 
     const rawNotifications = rawData.notifications || [];
-
-    // interface RawNotification {
-    //   id: number;
-    //   message: string;
-    //   status: string | null;
-    //   createdAt: string;
-    // }
-
-    // interface GetNotificationsResponse {
-    //   data?: {
-    //     notifications?: RawNotification[];
-    //     pagination?: {
-    //       offset?: number;
-    //       hasMore?: boolean;
-    //     };
-    //     totalUnread?: number;
-    //   };
-    // }
-
     const transformed: Notification[] = (rawNotifications as Notification[]).map((notif: Notification): Notification => ({
       ...notif,
-      read: notif.read ?? false, // Use value from backend or fallback to false
+      read: notif.read ?? false,
     }));
-
 
     if (transformed.length > 0) {
       setNotifications((prev) => [...prev, ...transformed]);
@@ -85,7 +194,6 @@ const Navbar = () => {
 
     setHasMore(rawData.pagination?.hasMore ?? false);
 
-    // Set unread count from backend
     if (rawData.totalUnread !== undefined) {
       setTotalUnread(Number(rawData.totalUnread));
     }
@@ -115,7 +223,6 @@ const Navbar = () => {
     );
     markNotificationAsRead({ id });
     setTotalUnread((prev) => Math.max(prev - 1, 0));
-
   };
 
   const markAllAsRead = () => {
@@ -123,9 +230,8 @@ const Navbar = () => {
       prev.map((notif) => ({ ...notif, read: true }))
     );
     markAllNotificationsAsRead();
-    setTotalUnread(0); // Reset counter
+    setTotalUnread(0);
   };
-
 
   const deleteNotification = (id: number) => {
     setNotifications((prev) =>
@@ -133,170 +239,238 @@ const Navbar = () => {
     );
   };
 
-  // const getNotificationIcon = (
-  //   priority: 'high' | 'medium' | 'low'
-  // ): React.ReactElement => {
-  //   if (priority === 'high') return <AlertCircle className="w-4 h-4 text-red-500" />;
-  //   return <Clock className="w-4 h-4 text-gray-400" />;
-  // };
-
-  // const getPriorityColor = (
-  //   priority: 'high' | 'medium' | 'low'
-  // ): string => {
-  //   switch (priority) {
-  //     case 'high':
-  //       return 'border-l-red-500';
-  //     case 'medium':
-  //       return 'border-l-yellow-500';
-  //     case 'low':
-  //       return 'border-l-green-500';
-  //     default:
-  //       return 'border-l-gray-300';
-  //   }
-  // };
-
   return (
-    <header className="w-full fixed top-0  h-16 bg-white px-6 flex items-center justify-between z-50 md:left-16 md:w-[calc(100%-4rem)]">
+    <header className="w-full fixed top-0 h-16 bg-white px-4 sm:px-6 flex items-center justify-between z-50 md:left-16 md:w-[calc(100%-4rem)] border-b border-gray-200">
 
-      {/* Left Section */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center">
-            {/* <span className="text-white font-bold text-lg">N</span> */}
-            {/* here we show the nust logo */}
-            <img src="/nust-seeklogo.png" alt="NUST Logo" className="w-8 h-8" />
+      {/* Left Section - Mobile Optimized */}
+      <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
+            <img src="/nust-seeklogo.png" alt="NUST Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
-          <div>
+          <div className="hidden sm:block">
             <h1 className="text-xl font-bold text-gray-900">NSS</h1>
             <p className="text-xs text-gray-500">Support System</p>
           </div>
+          {/* Mobile: Show abbreviated title */}
+          <div className="block sm:hidden">
+            <h1 className="text-lg font-bold text-gray-900">NSS</h1>
+          </div>
         </div>
       </div>
 
-      {/* Right Section */}
-       {/*only show these buttons when the user is logged in  */}
+      {/* Right Section - Mobile Optimized */}
       {user && (
-      <div className="flex items-center gap-3">
-        {/* Notifications */}
-        {(user.publicMetadata.role === 'manager' || user.publicMetadata.role === 'employee' || user.publicMetadata.role === 'worker') && (
-        <div className="relative" ref={notificationRef}>
-          <button
-            onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-            className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <Bell className="w-5 h-5" />
-            {totalUnread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
-                {totalUnread > 9 ? '9+' : totalUnread}
-              </span>
-            )}
-
-          </button>
-
-          {isNotificationOpen && (
-            <div className="absolute right-0 top-12 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-              {/* Header */}
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
-                {unreadCount > 0 && (
-                  <button
-                    onClick={markAllAsRead}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Mark all as read
-                  </button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Notifications - Mobile Optimized */}
+          {(user.publicMetadata.role === 'manager' || user.publicMetadata.role === 'employee' || user.publicMetadata.role === 'worker') && (
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <Bell className="w-5 h-5" />
+                {totalUnread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                    {totalUnread > 9 ? '9+' : totalUnread}
+                  </span>
                 )}
-              </div>
+              </button>
 
-              {/* List */}
-              <div className="max-h-80 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-gray-500 text-sm">
-                    No notifications
-                  </div>
-                ) : (
-                  notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors duration-150 border-l-4 ${!notification.read ? 'bg-blue-50/30' : ''
-                        }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
-                              New Notification
-                            </p>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              {notification.status !== 'read' && (
-                                <button
-                                  onClick={() => markAsRead(notification.id)}
-                                  className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-green-600 transition-colors"
-                                  title="Mark as read"
-                                >
-                                  <Check className="w-3 h-3" />
-                                </button>
-                              )}
-
-                              <button
-                                onClick={() => deleteNotification(notification.id)}
-                                className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-red-600 transition-colors"
-                                title="Delete"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {formatDistanceToNow(new Date(notification.createdAt), {
-                              addSuffix: true,
-                            })}
-                          </p>
-                        </div>
+              {isNotificationOpen && (
+                <>
+                  {/* Mobile: Full screen overlay with scroll lock */}
+                  <div 
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 sm:hidden" 
+                    onClick={() => setIsNotificationOpen(false)}
+                    style={{ touchAction: 'none' }} // Prevent scroll on overlay
+                  />
+                  
+                  {/* Notification Panel - Responsive with Swipe Support */}
+                  <div 
+                    ref={panelRef}
+                    className={`
+                      z-50
+                      /* Mobile: Full width bottom sheet */
+                      fixed sm:absolute
+                      bottom-0 sm:top-12 
+                      left-0 sm:left-auto sm:right-0
+                      w-full sm:w-96
+                      max-h-[85vh] sm:max-h-[80vh]
+                      bg-white rounded-t-2xl sm:rounded-lg 
+                      shadow-2xl sm:shadow-lg 
+                      border-t sm:border border-gray-200
+                      transform transition-transform duration-300 ease-out
+                      translate-y-0 sm:translate-y-0
+                      ${isDragging ? '' : 'transition-transform'}
+                    `}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={isDragging ? handleMouseMove : undefined}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    style={{ touchAction: 'pan-y' }} // Allow vertical panning
+                  >
+                    
+                    {/* Mobile Handle - Enhanced for swipe feedback */}
+                    <div 
+                      className="block sm:hidden w-12 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2 cursor-grab active:cursor-grabbing"
+                      style={{
+                        backgroundColor: isDragging ? '#6b7280' : '#d1d5db',
+                        transition: isDragging ? 'none' : 'background-color 0.2s'
+                      }}
+                    />
+                    
+                    {/* Header - Mobile Optimized */}
+                    <div className="px-4 sm:px-4 py-3 sm:py-3 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl sm:rounded-t-lg">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg sm:text-sm font-semibold text-gray-900">Notifications</h3>
+                        {totalUnread > 0 && (
+                          <span className="bg-red-100 text-red-600 text-xs font-medium px-2 py-1 rounded-full">
+                            {totalUnread} new
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={markAllAsRead}
+                            className="text-xs sm:text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <span className="hidden sm:inline">Mark all as read</span>
+                            <span className="sm:hidden">Mark all</span>
+                          </button>
+                        )}
+                        
+                        {/* Mobile Close Button */}
+                        <button
+                          onClick={() => setIsNotificationOpen(false)}
+                          className="block sm:hidden p-2 hover:bg-gray-100 rounded-lg"
+                        >
+                          <X className="w-4 h-4 text-gray-500" />
+                        </button>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
 
-              {/* Footer */}
-              {notifications.length > 0 && (
-                <div className="px-4 py-3 bg-gray-50 rounded-b-lg space-y-2">
-                  {hasMore ? (
-                    <button
-                      onClick={() => setNotificationOffset((prev) => prev + 10)}
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium w-full text-center"
+                    {/* List - Mobile Optimized with Scroll Control */}
+                    <div 
+                      className="overflow-y-auto flex-1" 
+                      style={{ 
+                        maxHeight: 'calc(85vh - 120px)',
+                        overscrollBehavior: 'contain' // Prevent overscroll
+                      }}
                     >
-                      Load More
-                    </button>
-                  ) : (
-                    <p className="text-sm text-gray-400 text-center">No more notifications</p>
-                  )}
-                </div>
+                      {notifications.length === 0 ? (
+                        <div className="px-4 py-12 sm:py-8 text-center text-gray-500">
+                          <Bell className="w-12 h-12 sm:w-8 sm:h-8 text-gray-300 mx-auto mb-3 sm:mb-2" />
+                          <p className="text-base sm:text-sm font-medium mb-1">No notifications</p>
+                          <p className="text-sm sm:text-xs text-gray-400">You're all caught up!</p>
+                          <p className="text-xs text-gray-400 mt-2 sm:hidden">Swipe down to close</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-100">
+                          {notifications.map((notification) => (
+                            <div
+                              key={notification.id}
+                              className={`px-4 py-4 sm:py-3 hover:bg-gray-50 transition-colors duration-150 border-l-4 ${
+                                !notification.read 
+                                  ? 'bg-blue-50/30 border-l-blue-500' 
+                                  : 'border-l-transparent'
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                {/* Mobile: Larger notification dot */}
+                                {!notification.read && (
+                                  <div className="w-2 h-2 sm:w-1.5 sm:h-1.5 bg-blue-500 rounded-full mt-2 sm:mt-1.5 flex-shrink-0" />
+                                )}
+                                
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <p className={`text-base sm:text-sm font-medium leading-5 ${
+                                        !notification.read ? 'text-gray-900' : 'text-gray-700'
+                                      }`}>
+                                        New Notification
+                                      </p>
+                                      <p className="text-sm sm:text-sm text-gray-600 mt-1 leading-5">
+                                        {notification.message}
+                                      </p>
+                                      <p className="text-xs text-gray-400 mt-2 sm:mt-1">
+                                        {formatDistanceToNow(new Date(notification.createdAt), {
+                                          addSuffix: true,
+                                        })}
+                                      </p>
+                                    </div>
+                                    
+                                    {/* Action Buttons - Mobile Optimized */}
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                      {notification.status !== 'read' && (
+                                        <button
+                                          onClick={() => markAsRead(notification.id)}
+                                          className="p-2 sm:p-1 hover:bg-gray-200 rounded-lg sm:rounded text-gray-400 hover:text-green-600 transition-colors"
+                                          title="Mark as read"
+                                        >
+                                          <Check className="w-4 h-4 sm:w-3 sm:h-3" />
+                                        </button>
+                                      )}
+
+                                      <button
+                                        onClick={() => deleteNotification(notification.id)}
+                                        className="p-2 sm:p-1 hover:bg-gray-200 rounded-lg sm:rounded text-gray-400 hover:text-red-600 transition-colors"
+                                        title="Delete"
+                                      >
+                                        <X className="w-4 h-4 sm:w-3 sm:h-3" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer - Mobile Optimized */}
+                    {notifications.length > 0 && (
+                      <div className="px-4 py-4 sm:py-3 bg-gray-50 border-t border-gray-100 sticky bottom-0">
+                        {hasMore ? (
+                          <button
+                            onClick={() => setNotificationOffset((prev) => prev + 10)}
+                            className="w-full text-sm sm:text-sm text-blue-600 hover:text-blue-800 font-medium py-2 sm:py-1 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                          >
+                            Load More
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <div className="text-center py-2 sm:py-1">
+                            <p className="text-sm text-gray-400">No more notifications</p>
+                            <p className="text-xs text-gray-400 mt-1 sm:hidden">Swipe down to close</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
-
-
             </div>
           )}
-        </div>)}
-        {/* Logout */}
-        <div className="relative">
-          <SignOutButton>
-            <button
-              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4 text-gray-600" />
-            </button>
-          </SignOutButton>
-        </div>
 
-        {/* User Icon */}
-        {/* <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-          <User className="w-4 h-4 text-gray-600" />
-        </div> */}
-      </div>
+          {/* Logout - Mobile Optimized */}
+          <div className="relative">
+            <SignOutButton>
+              <button
+                className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4 text-gray-600" />
+              </button>
+            </SignOutButton>
+          </div>
+        </div>
       )}
     </header>
   );

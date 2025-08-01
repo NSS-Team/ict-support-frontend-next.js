@@ -19,12 +19,12 @@ export const getTeamResponseSchema = z.object({
 
 export const getTeamWorkersDataSchema = z.object({
     workers : z.array(z.object({
-    workerId: z.number(),
-    workerUserId: z.string(),
-    teamId: z.number(),
-    workerName: z.string(),
-    status: teamWorkerStatusEnum,
-    })),
+        workerId: z.number(),
+        workerUserId: z.string(),
+        teamId: z.number(),
+        workerName: z.string(),
+        status: teamWorkerStatusEnum,
+    }).optional()).optional(),
 
     manager: z.object({
         managerId: z.string(),

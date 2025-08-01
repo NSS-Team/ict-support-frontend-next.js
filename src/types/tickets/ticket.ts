@@ -12,7 +12,10 @@ export const ticketSchema = z.object({
   submissionPreference: submissionPreferenceEnum,
   status: complaintStatusEnum,
   priority: priorityEnum,
-  assignedWorkerId: z.number().optional().nullable(),
+  assignedWorkers: z.array(z.object({
+    workerId: z.number(),
+    workerName: z.string(),
+  })),
   createdAt: z.string(),
   categoryName: z.string(),
   subCategoryName: z.string(),

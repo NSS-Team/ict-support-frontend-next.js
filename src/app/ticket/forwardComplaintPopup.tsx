@@ -5,7 +5,7 @@ import { Dialog } from '@headlessui/react';
 import { api } from '~/trpc/react';
 import { Users, X, ShieldCheck, MessageSquare } from 'lucide-react';
 import type { Team } from '~/types/teams/team';
-import { useToast } from '../ToastProvider';
+import { useToast } from '../_components/ToastProvider';
 
 interface ForwardTeamPopupProps {
   open: boolean;

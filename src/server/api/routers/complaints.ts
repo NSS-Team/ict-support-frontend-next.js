@@ -38,9 +38,9 @@ export const complaintsRouter = createTRPCRouter({
             });
             const json = await res.json();
             console.log("raw response", json);
-            const validated = getSubCategoryResponseSchema.parse(json);
-            console.log("validated response", validated);
-            return validated;
+            // const validated = getSubCategoryResponseSchema.parse(json);
+            // console.log("validated response", validated);
+            return json;
         }),
 
     // get issue options by subcategory ID
@@ -54,9 +54,9 @@ export const complaintsRouter = createTRPCRouter({
             });
             const json = await res.json();
             console.log("raw response", json);
-            const validated = getIssueOptionResponseSchema.parse(json);
-            console.log("validated response", validated);
-            return validated;
+            // const validated = getIssueOptionResponseSchema.parse(json);
+            // console.log("validated response", validated);
+            return json;
         }),
 
     // get complaint info by complaint ID
@@ -106,9 +106,9 @@ export const complaintsRouter = createTRPCRouter({
     }),
 
     // assign complaint to a worker 
-    assignComplainToWorker: publicProcedure.input(z.object({
-        workerId: z.number(),
-        complaintId: z.string(),
+    assignComplainToWorkers: publicProcedure.input(z.object({
+        complaintId: z.number(),
+        workerId: z.array(z.number()),
     })).mutation(async ({ ctx, input }) => {
         const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
         const res = await fetch(`${BASE_URL}/assignWorker`, {
@@ -177,7 +177,6 @@ export const complaintsRouter = createTRPCRouter({
         console.log("raw response of delete complaint", json);
         return json;
     }),
-
 
     // resolve a complaint 
     resolveComplaint: publicProcedure.input(z.object({

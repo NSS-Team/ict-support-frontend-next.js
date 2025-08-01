@@ -37,6 +37,6 @@
     "**/*.cjs",
     "**/*.js",
     ".next/types/**/*.ts"
-, "src/app/dashboard/worker"  ],
+, "src/app/dashboard/worker", "src/types/responseTypes/adminDashResponses"  ],
   "exclude": ["node_modules"]
 }

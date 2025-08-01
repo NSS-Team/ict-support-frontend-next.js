@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, CheckCircle, Upload, FileText, AlertCircle } from 'lucide-react';
 import { api } from '~/trpc/react';
 import { uploadAttachment } from '~/utils/complaintAttachmentsUpload';
-import { useToast } from '../ToastProvider';
+import { useToast } from '../_components/ToastProvider';
 
 interface CloseTicketPopupProps {
   open: boolean;

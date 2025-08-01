@@ -10,16 +10,17 @@ import { priorityColorMap } from '~/lib/PriorityColorMap';
 import { complaintStatusColorMap } from '~/lib/statusColorMap';
 import PopupImageViewer from '~/app/_components/PopupImageViewer';
 import { useState } from 'react';
-import MyTeamPopup from '~/app/_components/teams/myTeamPopups';
-import ForwardTeamPopup from '~/app/_components/teams/forwardComplaintPopup';
+import MyTeamPopup from '~/app/ticket/myTeamPopups';
+import ForwardTeamPopup from '~/app/ticket/forwardComplaintPopup';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import type { log } from '~/types/logs/log';
 import { useEffect } from 'react';
 import { useToast } from '~/app/_components/ToastProvider';
-import CloseTicketPopup from '~/app/_components/teams/closeTicketPopup';
+import CloseTicketPopup from '~/app/ticket/closeTicketPopup';
 import LoginRequired from '~/app/_components/unauthorized/loginToContinue';
 import ErrorLoading from '~/app/_components/unauthorized/errorLoading';
+import AssignedWorkersCard from '~/app/ticket/assignedWorkersCard';
 
 export default function TicketDetailPage() {
   const router = useRouter();
@@ -28,12 +29,17 @@ export default function TicketDetailPage() {
   const { addToast } = useToast();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const id = typeof params.id === 'string' ? params.id : '';
+  // now we have to convert the id to a number
+  const ticketId = parseInt(id, 10);
+  // to toggle the popup for my team when the assign button is clicked
   const [isMyTeamPopupOpen, setIsMyTeamPopupOpen] = useState(false);
+  // to toggle the popup for forwarding the ticket
   const [isForwardTeamPopupOpen, setIsForwardTeamPopupOpen] = useState(false);
+  // to toggle the close ticket modal, this is only for workers
   const [showCloseModal, setShowCloseModal] = useState(false);
 
-  const [shouldFetchTeams, setShouldFetchTeams] = useState(false);
-  const [shouldFetchMyTeamMembers, setShouldFetchMyTeamMembers] = useState(false);
+  // const [shouldFetchTeams, setShouldFetchTeams] = useState(false);
+  // const [shouldFetchMyTeamMembers, setShouldFetchMyTeamMembers] = useState(false);
 
 
   // api to fetch the ticket details
@@ -89,16 +95,16 @@ export default function TicketDetailPage() {
       </div>
     );
   }
-  if(isLoaded && !isSignedIn) {
-          return <LoginRequired />;
-      }
+  if (isLoaded && !isSignedIn) {
+    return <LoginRequired />;
+  }
 
   if (error || !ticket) {
     return (
       <ErrorLoading />
     );
   }
-  
+
 
 
   if (isDeleting) {
@@ -156,14 +162,14 @@ export default function TicketDetailPage() {
               )}
               {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
                 <button className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-                  onClick={() => { setIsMyTeamPopupOpen(true); setShouldFetchMyTeamMembers(true); console.log('Assigning ticket...'); }}
+                  onClick={() => { setIsMyTeamPopupOpen(true); console.log('Assigning ticket...'); }}
                 >
                   <User className="h-4 w-4 mr-2" />
                   Assign
                 </button>
               )}
               {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
-                <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => { setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...'); setShouldFetchTeams(true); }}>
+                <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => { setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...');}}>
                   <Send className="h-4 w-4 mr-2" />
                   Forward Complaint
                 </button>
@@ -186,7 +192,7 @@ export default function TicketDetailPage() {
         </div>
 
         {/* Mobile Action Bar */}
-        <div className="lg:hidden px-4 py-3 bg-gray-50 border-t border-gray-200 w-full">
+        {/* <div className="lg:hidden px-4 py-3 bg-gray-50 border-t border-gray-200 w-full">
           <div className="flex space-x-2 max-w-full">
             {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
               <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
@@ -214,7 +220,7 @@ export default function TicketDetailPage() {
               </button>
             )}
           </div>
-        </div>
+        </div> */}
       </header>
 
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 pb-32 overflow-hidden">
@@ -263,22 +269,25 @@ export default function TicketDetailPage() {
 
             {/* Quick Stats - Mobile Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <User className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-500">Assigned To</p>
-                    <p className="text-base font-semibold text-gray-900 truncate">{complaint?.assignedWorkerName}</p>
-                    <p className="text-base font-semibold text-gray-900 truncate">
-                      {complaint?.assignedWorkerId || (
-                        <span className="text-amber-600 italic">Unassigned</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </div>
+
+
+              {/* assignedWorkersCard component */}
+              <AssignedWorkersCard 
+                assignedWorkers={
+                  complaint?.assignedWorkers
+                    ? complaint.assignedWorkers.map((worker: any) => ({
+                        workerId: worker.workerId,
+                        workerUserId: worker.workerUserId ?? '',
+                        teamId: worker.teamId ?? 0,
+                        workerName: worker.workerName ?? worker.name ?? 'Unknown',
+                        status: worker.status ?? 'active',
+                      }))
+                    : undefined
+                }
+              />
+              
+
+
 
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <div className="flex items-center gap-3">
@@ -484,7 +493,7 @@ export default function TicketDetailPage() {
 
 
             {/* Quick Actions - Mobile */}
-            <div className="lg:hidden bg-white rounded-xl shadow-sm border border-gray-200">
+            {/* <div className="lg:hidden bg-white rounded-xl shadow-sm border border-gray-200">
               <div className="px-4 py-4 border-b border-gray-100 bg-gray-50">
                 <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
               </div>
@@ -494,7 +503,7 @@ export default function TicketDetailPage() {
                   Add Comment
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* Popup Image Viewer */}
             {selectedImage && (
@@ -504,11 +513,30 @@ export default function TicketDetailPage() {
               />
             )}
 
-            {/* My Team Popup */}
+            {
+              <MyTeamPopup
+                open={isMyTeamPopupOpen}
+                setOpen={setIsMyTeamPopupOpen}
+                complainId={ticketId}
+                assignedWorkers={
+                  complaint?.assignedWorkers
+                    ? complaint.assignedWorkers.map((worker: any) => ({
+                      workerId: worker.workerId,
+                      workerUserId: worker.workerUserId ?? '',
+                      teamId: worker.teamId ?? 0,
+                      workerName: worker.workerName ?? worker.name ?? 'Unknown',
+                      status: worker.status ?? 'active',
+                    }))
+                    : undefined
+                }
+              />
+            }
 
-            {<MyTeamPopup open={isMyTeamPopupOpen} setOpen={setIsMyTeamPopupOpen} complainId={id} assignedWorkerId={complaint?.assignedWorkerId} />}
-
-            <ForwardTeamPopup open={isForwardTeamPopupOpen} setOpen={setIsForwardTeamPopupOpen} complainId={id} MyTeamId={MyTeamId} />
+            <ForwardTeamPopup 
+            open={isForwardTeamPopupOpen} 
+            setOpen={setIsForwardTeamPopupOpen} 
+            complainId={id} 
+            MyTeamId={MyTeamId} />
 
             <CloseTicketPopup
               open={showCloseModal}
