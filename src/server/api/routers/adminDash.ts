@@ -16,6 +16,7 @@ export const adminDashRouter = createTRPCRouter({
         });
         const json = await res.json();
         console.log("raw response", json);
+        console.log("unapproved registrations", json.data.unapprovedUsers);
         return json;
     }),
 

@@ -1,28 +1,53 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, Calendar, Users, Mail, Building, UserCheck, UserX, Eye, Clock, Grid, List, ArrowLeft, Filter, MoreVertical } from 'lucide-react';
+import { Search, Calendar, Users, Mail, Building, UserCheck, UserX, Eye, Clock, Grid, List, X, Shield, Wrench, Filter, ChevronDown } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { api } from '~/trpc/react';
 import Loader from "~/app/_components/Loader";
 import LoginRequired from "~/app/_components/unauthorized/loginToContinue";
 import Unauthorized from "~/app/_components/unauthorized/unauthorized";
-import type { SupportStaffMember } from '~/types/user/supportStaffMemberSchema';
+import ViewUser from './viewUser';
 import { useToast } from '~/app/_components/ToastProvider';
+
+// Updated interface to match API response
+interface PendingUser {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    picUrl?: string | null;
+    phone?: string | null;
+    role: string;
+    department: string;
+    officeNumber?: string | null;
+    designation?: string | null;
+    location: string;
+    createdAt: string;
+    teamManager?: string | null;
+    teamWorker?: string | null;
+}
+
+type DateFilter = 'newest' | 'oldest';
+type RoleFilter = 'all' | 'employee' | 'support_staff' | 'manager' | 'worker';
 
 export default function NewRegistrationsPage() {
     const { addToast } = useToast();
     const { user, isLoaded, isSignedIn } = useUser();
 
-    const [selectedUser, setSelectedUser] = useState<SupportStaffMember | null>(null);
+    const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [showFilters, setShowFilters] = useState(false);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    
+    // Filter states
+    const [dateFilter, setDateFilter] = useState<DateFilter>('newest');
+    const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
 
     // API calls
     const { data: pendingUsersResponse, isLoading: isLoadingPending, refetch } = api.adminDash.getUnapprovedRegistrations.useQuery();
-    const pendingUsers: SupportStaffMember[] = pendingUsersResponse?.data?.unapprovedUsers || [];
+    const pendingUsers: PendingUser[] = pendingUsersResponse?.data?.unapprovedUsers || [];
 
     // API mutations
     const approveMutation = api.adminDash.approveUser.useMutation({
@@ -53,12 +78,77 @@ export default function NewRegistrationsPage() {
         if (!Array.isArray(pendingUsers)) {
             return [];
         }
-        return pendingUsers.filter((user: SupportStaffMember) => {
+        
+        let filtered = pendingUsers.filter((user: PendingUser) => {
             const matchesSearch = user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.email.toLowerCase().includes(searchTerm.toLowerCase());
-            return matchesSearch;
+                user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.department.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            // Updated role filter logic
+            let matchesRole = false;
+            const userRole = user.role.toLowerCase();
+            
+            switch (roleFilter) {
+                case 'all':
+                    matchesRole = true;
+                    break;
+                case 'employee':
+                    matchesRole = userRole === 'employee';
+                    break;
+                case 'support_staff':
+                    matchesRole = userRole === 'manager' || userRole === 'worker';
+                    break;
+                case 'manager':
+                    matchesRole = userRole === 'manager';
+                    break;
+                case 'worker':
+                    matchesRole = userRole === 'worker';
+                    break;
+                default:
+                    matchesRole = true;
+            }
+            
+            return matchesSearch && matchesRole;
         });
-    }, [searchTerm, pendingUsers]);
+
+        filtered.sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            
+            if (dateFilter === 'newest') {
+                return dateB - dateA;
+            } else {
+                return dateA - dateB;
+            }
+        });
+
+        return filtered;
+    }, [searchTerm, pendingUsers, dateFilter, roleFilter]);
+
+    const filterCounts = useMemo(() => {
+        if (!Array.isArray(pendingUsers)) {
+            return { all: 0, employee: 0, support_staff: 0, manager: 0, worker: 0 };
+        }
+        
+        const managerCount = pendingUsers.filter(user => user.role.toLowerCase() === 'manager').length;
+        const workerCount = pendingUsers.filter(user => user.role.toLowerCase() === 'worker').length;
+        
+        return {
+            all: pendingUsers.length,
+            employee: pendingUsers.filter(user => user.role.toLowerCase() === 'employee').length,
+            support_staff: managerCount + workerCount,
+            manager: managerCount,
+            worker: workerCount,
+        };
+    }, [pendingUsers]);
+
+    const activeFilterCount = useMemo(() => {
+        let count = 0;
+        if (roleFilter !== 'all') count++;
+        if (dateFilter !== 'newest') count++;
+        return count;
+    }, [dateFilter, roleFilter]);
 
     // Auth checks
     if (!isLoaded) {
@@ -91,7 +181,7 @@ export default function NewRegistrationsPage() {
         );
     }
 
-    const openModal = (user: SupportStaffMember) => {
+    const openModal = (user: PendingUser) => {
         setSelectedUser(user);
         setIsModalOpen(true);
     };
@@ -121,157 +211,570 @@ export default function NewRegistrationsPage() {
         });
     };
 
+    const clearFilters = () => {
+        setDateFilter('newest');
+        setRoleFilter('all');
+        setSearchTerm('');
+        setIsFilterOpen(false);
+    };
+
+    // Helper function to check if value exists (handles empty strings and nulls)
+    const hasValue = (value: any): boolean => {
+        return value !== null && value !== undefined && value !== '';
+    };
+
+    // Helper function to get role display info
+    const getRoleDisplayInfo = (role: string) => {
+        switch (role.toLowerCase()) {
+            case 'employee':
+                return {
+                    icon: Building,
+                    color: 'bg-blue-500',
+                    textColor: 'text-blue-600',
+                    bgColor: 'bg-blue-50',
+                    label: 'Employee'
+                };
+            case 'manager':
+                return {
+                    icon: Shield,
+                    color: 'bg-purple-500',
+                    textColor: 'text-purple-600',
+                    bgColor: 'bg-purple-50',
+                    label: 'Manager'
+                };
+            case 'worker':
+                return {
+                    icon: Wrench,
+                    color: 'bg-green-500',
+                    textColor: 'text-green-600',
+                    bgColor: 'bg-green-50',
+                    label: 'Worker'
+                };
+            default:
+                return {
+                    icon: Users,
+                    color: 'bg-gray-500',
+                    textColor: 'text-gray-600',
+                    bgColor: 'bg-gray-50',
+                    label: role
+                };
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 pb-20 md:pb-8">
-            {/* Mobile Header - Sticky */}
+            {/* Mobile-First Header */}
             <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
-                <div className="px-4 sm:px-6 py-4">
-                    {/* Title and View Toggle */}
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-sm">
-                                <Clock className="w-5 h-5 text-white" />
+                <div className="px-3 sm:px-4 lg:px-6 py-3">
+                    {/* Mobile Title Row */}
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Pending Registrations</h1>
-                                <p className="text-sm text-gray-500 hidden sm:block">Review and approve new user requests</p>
+                                <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">Pending Registrations</h1>
+                                <p className="text-xs text-gray-500 hidden sm:block">
+                                    {filteredUsers.length} of {pendingUsers.length} registrations
+                                </p>
                             </div>
                         </div>
 
-                        {/* View Mode Toggle - Mobile Optimized */}
-                        <div className="flex items-center gap-2">
-                            <div className="bg-gray-100 rounded-lg p-1 flex">
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`p-2 rounded-md transition-colors ${
-                                        viewMode === 'grid' 
-                                            ? 'bg-white shadow-sm text-blue-600' 
-                                            : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                                >
-                                    <Grid className="w-4 h-4" />
-                                </button>
+                        {/* Mobile Stats & Controls */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {/* Compact Stats */}
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5">
+                                <span className="text-sm sm:text-lg font-bold text-amber-700">{filteredUsers.length}</span>
+                                <span className="text-xs text-amber-600 ml-1 hidden sm:inline">pending</span>
+                            </div>
+
+                            {/* View Toggle - Hidden on mobile */}
+                            <div className="bg-gray-100 rounded-lg p-0.5 hidden sm:flex">
                                 <button
                                     onClick={() => setViewMode('list')}
-                                    className={`p-2 rounded-md transition-colors ${
+                                    className={`p-1.5 rounded transition-colors ${
                                         viewMode === 'list' 
                                             ? 'bg-white shadow-sm text-blue-600' 
-                                            : 'text-gray-500 hover:text-gray-700'
+                                            : 'text-gray-500'
                                     }`}
                                 >
                                     <List className="w-4 h-4" />
                                 </button>
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-1.5 rounded transition-colors ${
+                                        viewMode === 'grid' 
+                                            ? 'bg-white shadow-sm text-blue-600' 
+                                            : 'text-gray-500'
+                                    }`}
+                                >
+                                    <Grid className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* Mobile Filter Toggle */}
+                            <button
+                                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                                className="sm:hidden p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors relative"
+                            >
+                                <Filter className="w-4 h-4 text-gray-600" />
+                                {activeFilterCount > 0 && (
+                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                                        <span className="text-xs text-white font-medium">{activeFilterCount}</span>
+                                    </div>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Search Bar */}
+                    <div className="relative mb-3">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="Search by name, email, or department..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        />
+                    </div>
+
+                    {/* Desktop Filters */}
+                    <div className="hidden sm:block">
+                        <div className="flex flex-col xl:flex-row xl:items-center gap-3">
+                            {/* Main Role Filters */}
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide min-w-0 flex-1">
+                                <div className="flex items-center gap-2 min-w-max">
+                                    {[
+                                        { 
+                                            key: 'all' as RoleFilter, 
+                                            label: 'All', 
+                                            count: filterCounts.all,
+                                            icon: Users,
+                                            color: 'text-gray-600'
+                                        },
+                                        { 
+                                            key: 'employee' as RoleFilter, 
+                                            label: 'Employee', 
+                                            count: filterCounts.employee,
+                                            icon: Building,
+                                            color: 'text-blue-600'
+                                        },
+                                        { 
+                                            key: 'support_staff' as RoleFilter, 
+                                            label: 'Support Staff', 
+                                            count: filterCounts.support_staff,
+                                            icon: Shield,
+                                            color: 'text-purple-600'
+                                        },
+                                    ].map((role) => (
+                                        <button
+                                            key={role.key}
+                                            onClick={() => setRoleFilter(role.key)}
+                                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                                                roleFilter === role.key
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            <role.icon className="w-3 h-3" />
+                                            <span>{role.label}</span>
+                                            <span className={`px-1.5 py-0.5 rounded-full text-xs flex-shrink-0 ${
+                                                roleFilter === role.key
+                                                    ? 'bg-blue-500 text-white'
+                                                    : 'bg-gray-200 text-gray-600'
+                                            }`}>
+                                                {role.count}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Secondary Filters */}
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide min-w-0 xl:flex-shrink-0">
+                                <div className="flex items-center gap-2 min-w-max">
+                                    {/* Sub-filters for Support Staff */}
+                                    {roleFilter === 'support_staff' && (
+                                        <>
+                                            <div className="hidden xl:block w-px h-6 bg-gray-300 mx-1"></div>
+                                            <span className="text-xs text-gray-500 font-medium px-2 py-1 xl:hidden">Refine:</span>
+                                            {[
+                                                { 
+                                                    key: 'manager' as RoleFilter, 
+                                                    label: 'Managers', 
+                                                    count: filterCounts.manager,
+                                                    icon: Shield,
+                                                    color: 'text-purple-600'
+                                                },
+                                                { 
+                                                    key: 'worker' as RoleFilter, 
+                                                    label: 'Workers', 
+                                                    count: filterCounts.worker,
+                                                    icon: Wrench,
+                                                    color: 'text-green-600'
+                                                },
+                                            ].map((subRole) => (
+                                                <button
+                                                    key={subRole.key}
+                                                    onClick={() => setRoleFilter(subRole.key)}
+                                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                                                        roleFilter === subRole.key
+                                                            ? 'bg-purple-600 text-white'
+                                                            : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+                                                    }`}
+                                                >
+                                                    <subRole.icon className="w-3 h-3" />
+                                                    <span>{subRole.label}</span>
+                                                    <span className={`px-1.5 py-0.5 rounded-full text-xs flex-shrink-0 ${
+                                                        roleFilter === subRole.key
+                                                            ? 'bg-purple-500 text-white'
+                                                            : 'bg-purple-200 text-purple-700'
+                                                    }`}>
+                                                        {subRole.count}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* Date Sort Toggle */}
+                                    <button
+                                        onClick={() => setDateFilter(dateFilter === 'newest' ? 'oldest' : 'newest')}
+                                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                                            dateFilter !== 'newest'
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        <Calendar className="w-3 h-3 flex-shrink-0" />
+                                        <span className="hidden md:inline">{dateFilter === 'newest' ? 'Newest' : 'Oldest'}</span>
+                                        <span className="md:hidden">{dateFilter === 'newest' ? 'New' : 'Old'}</span>
+                                        {dateFilter === 'newest' ? (
+                                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                            </svg>
+                                        ) : (
+                                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                            </svg>
+                                        )}
+                                    </button>
+
+                                    {/* Clear Filters */}
+                                    {(activeFilterCount > 0 || searchTerm) && (
+                                        <button
+                                            onClick={clearFilters}
+                                            className="flex items-center gap-1 px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0"
+                                        >
+                                            <X className="w-3 h-3 flex-shrink-0" />
+                                            <span className="hidden md:inline">Clear</span>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Stats Card - Mobile Optimized */}
-                    <div className="mb-4">
-                        {/* <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200 p-4">
-                            <div className="flex items-center justify-between">
+                    {/* Mobile Filter Panel */}
+                    {isFilterOpen && (
+                        <div className="sm:hidden absolute left-0 right-0 top-full bg-white border-t border-gray-200 shadow-lg z-50">
+                            <div className="p-4 space-y-4">
+                                {/* Role Filters */}
                                 <div>
-                                    <p className="text-amber-700 text-sm font-medium">Pending Approval</p>
-                                    <p className="text-2xl sm:text-3xl font-bold text-amber-600">{pendingUsers.length}</p>
+                                    <h3 className="text-sm font-medium text-gray-900 mb-2">Role</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[
+                                            { key: 'all' as RoleFilter, label: 'All', count: filterCounts.all, icon: Users },
+                                            { key: 'employee' as RoleFilter, label: 'Employee', count: filterCounts.employee, icon: Building },
+                                            { key: 'support_staff' as RoleFilter, label: 'Support Staff', count: filterCounts.support_staff, icon: Shield },
+                                        ].map((role) => (
+                                            <button
+                                                key={role.key}
+                                                onClick={() => setRoleFilter(role.key)}
+                                                className={`flex items-center justify-between p-3 rounded-lg text-sm font-medium transition-colors ${
+                                                    roleFilter === role.key
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-gray-100 text-gray-700'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <role.icon className="w-4 h-4" />
+                                                    <span>{role.label}</span>
+                                                </div>
+                                                <span className={`px-2 py-0.5 rounded-full text-xs ${
+                                                    roleFilter === role.key
+                                                        ? 'bg-blue-500 text-white'
+                                                        : 'bg-gray-200 text-gray-600'
+                                                }`}>
+                                                    {role.count}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Sub-filters for Support Staff */}
+                                    {roleFilter === 'support_staff' && (
+                                        <div className="mt-3 pt-3 border-t border-gray-200">
+                                            <h4 className="text-xs font-medium text-gray-500 mb-2">Refine Support Staff</h4>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {[
+                                                    { key: 'manager' as RoleFilter, label: 'Managers', count: filterCounts.manager, icon: Shield },
+                                                    { key: 'worker' as RoleFilter, label: 'Workers', count: filterCounts.worker, icon: Wrench },
+                                                ].map((subRole) => (
+                                                    <button
+                                                        key={subRole.key}
+                                                        onClick={() => setRoleFilter(subRole.key)}
+                                                        className={`flex items-center justify-between p-2.5 rounded-lg text-sm font-medium transition-colors ${
+                                                            roleFilter === subRole.key
+                                                                ? 'bg-purple-600 text-white'
+                                                                : 'bg-purple-50 text-purple-700 border border-purple-200'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <subRole.icon className="w-4 h-4" />
+                                                            <span>{subRole.label}</span>
+                                                        </div>
+                                                        <span className={`px-2 py-0.5 rounded-full text-xs ${
+                                                            roleFilter === subRole.key
+                                                                ? 'bg-purple-500 text-white'
+                                                                : 'bg-purple-200 text-purple-700'
+                                                        }`}>
+                                                            {subRole.count}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="p-3 bg-amber-100 rounded-xl">
-                                    <Clock className="w-6 h-6 text-amber-600" />
+
+                                {/* Sort Options */}
+                                <div>
+                                    <h3 className="text-sm font-medium text-gray-900 mb-2">Sort by Date</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            onClick={() => setDateFilter('newest')}
+                                            className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-colors ${
+                                                dateFilter === 'newest'
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-gray-100 text-gray-700'
+                                            }`}
+                                        >
+                                            <Calendar className="w-4 h-4" />
+                                            <span>Newest</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setDateFilter('oldest')}
+                                            className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-colors ${
+                                                dateFilter === 'oldest'
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-gray-100 text-gray-700'
+                                            }`}
+                                        >
+                                            <Calendar className="w-4 h-4" />
+                                            <span>Oldest</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Mobile Filter Actions */}
+                                <div className="flex gap-2 pt-2">
+                                    <button
+                                        onClick={clearFilters}
+                                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                                    >
+                                        Clear All
+                                    </button>
+                                    <button
+                                        onClick={() => setIsFilterOpen(false)}
+                                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                    >
+                                        Apply Filters
+                                    </button>
                                 </div>
                             </div>
-                        </div> */}
-                    </div>
+                        </div>
+                    )}
 
-                    {/* Search Bar - Mobile Optimized */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                            type="text"
-                            placeholder="Search by name or email..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        />
-                    </div>
+                    {/* Active Filters Summary */}
+                    {(roleFilter !== 'all' || dateFilter !== 'newest' || searchTerm) && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg mt-3">
+                            <span className="font-medium">Active:</span>
+                            <div className="flex items-center gap-1 flex-wrap">
+                                {roleFilter !== 'all' && (
+                                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                                        {roleFilter === 'support_staff' ? 'Support Staff' : 
+                                         roleFilter === 'employee' ? 'Employee' : 
+                                         roleFilter === 'manager' ? 'Managers' : 
+                                         roleFilter === 'worker' ? 'Workers' : roleFilter}
+                                    </span>
+                                )}
+                                {dateFilter !== 'newest' && (
+                                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                                        {dateFilter === 'oldest' ? 'Oldest First' : 'Newest First'}
+                                    </span>
+                                )}
+                                {searchTerm && (
+                                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded truncate max-w-24">
+                                        "{searchTerm}"
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="px-4 sm:px-6 py-6 max-w-7xl mx-auto">
-                {/* User Cards/List */}
-                {viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                        {filteredUsers.map((user: SupportStaffMember) => (
-                            <div
-                                key={user.id}
-                                onClick={() => openModal(user)}
-                                className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-1 group active:scale-95"
-                            >
-                                {/* User Info */}
-                                <div className="flex items-center mb-4">
-                                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                                        {user.picUrl ? (
-                                            <img
-                                                src={user.picUrl}
-                                                alt={`${user.firstName} ${user.lastName}`}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                    if (e.currentTarget.nextElementSibling) {
-                                                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                                                    }
-                                                }}
-                                            />
-                                        ) : null}
-                                        <div className={`w-full h-full flex items-center justify-center ${user.picUrl ? 'hidden' : 'flex'}`}>
-                                            {getInitials(user.firstName + ' ' + user.lastName)}
+            {/* Main Content - Mobile Optimized */}
+            <div className="px-3 sm:px-4 lg:px-6 py-4 max-w-7xl mx-auto">
+                {/* Mobile View Mode Toggle */}
+                <div className="sm:hidden mb-4">
+                    <div className="bg-gray-100 rounded-lg p-0.5 flex w-full">
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`flex-1 p-2 rounded transition-colors ${
+                                viewMode === 'list' 
+                                    ? 'bg-white shadow-sm text-blue-600' 
+                                    : 'text-gray-500'
+                            }`}
+                        >
+                            <List className="w-4 h-4 mx-auto" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={`flex-1 p-2 rounded transition-colors ${
+                                viewMode === 'grid' 
+                                    ? 'bg-white shadow-sm text-blue-600' 
+                                    : 'text-gray-500'
+                            }`}
+                        >
+                            <Grid className="w-4 h-4 mx-auto" />
+                        </button>
+                    </div>
+                </div>
+
+                {viewMode === 'list' ? (
+                    /* Mobile-Optimized List View */
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="divide-y divide-gray-50">
+                            {filteredUsers.map((user: PendingUser) => {
+                                const roleInfo = getRoleDisplayInfo(user.role);
+                                const RoleIcon = roleInfo.icon;
+                                
+                                return (
+                                    <div
+                                        key={user.id}
+                                        onClick={() => openModal(user)}
+                                        className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer active:bg-gray-100"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            {/* Avatar */}
+                                            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden ${roleInfo.color} flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
+                                                {hasValue(user.picUrl) ? (
+                                                    <img
+                                                        src={user.picUrl!}
+                                                        alt={`${user.firstName} ${user.lastName}`}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.currentTarget.style.display = 'none';
+                                                            if (e.currentTarget.nextElementSibling) {
+                                                                (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                                                            }
+                                                        }}
+                                                    />
+                                                ) : null}
+                                                <div className={`w-full h-full flex items-center justify-center ${hasValue(user.picUrl) ? 'hidden' : 'flex'}`}>
+                                                    {getInitials(user.firstName + ' ' + user.lastName)}
+                                                </div>
+                                            </div>
+
+                                            {/* User Info */}
+                                            <div className="flex-1 min-w-0">
+                                                {/* Name and Status */}
+                                                <div className="flex items-start justify-between gap-2 mb-1">
+                                                    <div className="min-w-0 flex-1">
+                                                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                                                            {user.firstName} {user.lastName}
+                                                        </h3>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${roleInfo.bgColor} ${roleInfo.textColor} border border-current border-opacity-20`}>
+                                                                <RoleIcon className="w-3 h-3" />
+                                                                {roleInfo.label}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 flex-shrink-0">
+                                                        Pending
+                                                    </span>
+                                                </div>
+
+                                                {/* Details */}
+                                                <div className="space-y-1 text-xs sm:text-sm text-gray-600">
+                                                    <p className="truncate">{user.email}</p>
+                                                    <div className="flex items-center gap-3 flex-wrap">
+                                                        <span className="truncate">{user.department}</span>
+                                                        {hasValue(user.location) && (
+                                                            <span className="truncate hidden sm:inline">{user.location}</span>
+                                                        )}
+                                                        <span className="text-gray-500 hidden sm:inline">{formatDate(user.createdAt)}</span>
+                                                    </div>
+                                                    
+                                                    {/* Mobile: Show location and date in separate line */}
+                                                    <div className="flex items-center gap-3 sm:hidden text-gray-500">
+                                                        {hasValue(user.location) && (
+                                                            <span className="truncate">{user.location}</span>
+                                                        )}
+                                                        <span>{formatDate(user.createdAt)}</span>
+                                                    </div>
+                                                    
+                                                    {/* Team info */}
+                                                    {(user.role.toLowerCase() === 'worker' || user.role.toLowerCase() === 'manager') && (hasValue(user.teamManager) || hasValue(user.teamWorker)) && (
+                                                        <div className="flex items-center gap-2 flex-wrap mt-2">
+                                                            {hasValue(user.teamManager) && (
+                                                                <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded truncate">
+                                                                    Manager: {user.teamManager}
+                                                                </span>
+                                                            )}
+                                                            {hasValue(user.teamWorker) && (
+                                                                <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded truncate">
+                                                                    Team: {user.teamWorker}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Action Button */}
+                                            <div className="flex-shrink-0 hidden sm:block">
+                                                <Eye className="w-4 h-4 text-gray-400" />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="ml-3 flex-1 min-w-0">
-                                        <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                                            {user.firstName} {user.lastName}
-                                        </p>
-                                        <p className="text-sm text-gray-500 truncate">{user.role}</p>
-                                    </div>
-                                </div>
-
-                                {/* Details */}
-                                <div className="space-y-2 mb-4">
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
-                                        <span className="truncate">{user.email}</span>
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <Building className="w-4 h-4 mr-2 flex-shrink-0" />
-                                        <span className="truncate">{user.department}</span>
-                                    </div>
-                                </div>
-
-                                {/* Status and Action */}
-                                <div className="flex items-center justify-between">
-                                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                        Pending Review
-                                    </span>
-                                    <Eye className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                                </div>
-                            </div>
-                        ))}
+                                );
+                            })}
+                        </div>
                     </div>
                 ) : (
-                    /* List View - Mobile Optimized */
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        {/* Mobile List Items */}
-                        <div className="divide-y divide-gray-100">
-                            {filteredUsers.map((user: SupportStaffMember) => (
+                    /* Mobile-Optimized Grid View */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                        {filteredUsers.map((user: PendingUser) => {
+                            const roleInfo = getRoleDisplayInfo(user.role);
+                            const RoleIcon = roleInfo.icon;
+                            
+                            return (
                                 <div
                                     key={user.id}
                                     onClick={() => openModal(user)}
-                                    className="p-4 hover:bg-gray-50 transition-colors cursor-pointer active:bg-gray-100"
+                                    className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group active:scale-95"
                                 >
-                                    <div className="flex items-center gap-3">
-                                        {/* Avatar */}
-                                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                                            {user.picUrl ? (
+                                    {/* Header */}
+                                    <div className="flex items-center mb-3">
+                                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden ${roleInfo.color} flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
+                                            {hasValue(user.picUrl) ? (
                                                 <img
-                                                    src={user.picUrl}
+                                                    src={user.picUrl!}
                                                     alt={`${user.firstName} ${user.lastName}`}
                                                     className="w-full h-full object-cover"
                                                     onError={(e) => {
@@ -282,188 +785,128 @@ export default function NewRegistrationsPage() {
                                                     }}
                                                 />
                                             ) : null}
-                                            <div className={`w-full h-full flex items-center justify-center ${user.picUrl ? 'hidden' : 'flex'}`}>
+                                            <div className={`w-full h-full flex items-center justify-center ${hasValue(user.picUrl) ? 'hidden' : 'flex'}`}>
                                                 {getInitials(user.firstName + ' ' + user.lastName)}
                                             </div>
                                         </div>
-
-                                        {/* User Info */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between">
-                                                <h3 className="font-semibold text-gray-900 truncate">
-                                                    {user.firstName} {user.lastName}
-                                                </h3>
-                                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 ml-2">
-                                                    Pending
-                                                </span>
+                                        <div className="ml-2.5 flex-1 min-w-0">
+                                            <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate text-sm">
+                                                {user.firstName} {user.lastName}
+                                            </p>
+                                            <div className="flex items-center gap-1 mt-0.5">
+                                                <RoleIcon className={`w-3 h-3 ${roleInfo.textColor}`} />
+                                                <p className={`text-xs truncate ${roleInfo.textColor} font-medium`}>{roleInfo.label}</p>
                                             </div>
-                                            <p className="text-sm text-gray-600 truncate">{user.email}</p>
-                                            <div className="flex items-center gap-4 mt-1">
-                                                <span className="text-xs text-gray-500">{user.department}</span>
-                                                <span className="text-xs text-gray-500">{user.role}</span>
-                                                <span className="text-xs text-gray-500">{formatDate(user.createdAt)}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Arrow */}
-                                        <div className="text-gray-400">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                            </svg>
                                         </div>
                                     </div>
+
+                                    {/* Details */}
+                                    <div className="space-y-2 mb-3">
+                                        <div className="flex items-center text-xs text-gray-600">
+                                            <Mail className="w-3 h-3 mr-1.5 flex-shrink-0" />
+                                            <span className="truncate">{user.email}</span>
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-600">
+                                            <Building className="w-3 h-3 mr-1.5 flex-shrink-0" />
+                                            <span className="truncate">{user.department}</span>
+                                        </div>
+                                        {hasValue(user.location) && (
+                                            <div className="flex items-center text-xs text-gray-600">
+                                                <Calendar className="w-3 h-3 mr-1.5 flex-shrink-0" />
+                                                <span className="truncate">{user.location}</span>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Team info for support staff */}
+                                        {(user.role.toLowerCase() === 'worker' || user.role.toLowerCase() === 'manager') && (
+                                            <>
+                                                {hasValue(user.teamManager) && (
+                                                    <div className="flex items-center text-xs text-purple-600">
+                                                        <Shield className="w-3 h-3 mr-1.5 flex-shrink-0" />
+                                                        <span className="truncate">Manager: {user.teamManager}</span>
+                                                    </div>
+                                                )}
+                                                {hasValue(user.teamWorker) && (
+                                                    <div className="flex items-center text-xs text-green-600">
+                                                        <Users className="w-3 h-3 mr-1.5 flex-shrink-0" />
+                                                        <span className="truncate">Team: {user.teamWorker}</span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                        
+                                        <div className="flex items-center text-xs text-gray-600">
+                                            <Calendar className="w-3 h-3 mr-1.5 flex-shrink-0" />
+                                            <span className="truncate">{formatDate(user.createdAt)}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="flex items-center justify-between">
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                            Pending
+                                        </span>
+                                        <Eye className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
+                            );
+                        })}
                     </div>
                 )}
 
                 {/* Empty State */}
                 {filteredUsers.length === 0 && (
-                    <div className="text-center py-16 px-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Clock className="w-8 h-8 text-gray-400" />
+                    <div className="text-center py-12 px-4">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Clock className="w-6 h-6 text-gray-400" />
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No pending registrations</h3>
-                        <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                            {searchTerm
-                                ? 'Try adjusting your search criteria'
+                        <h3 className="text-base font-medium text-gray-900 mb-1">
+                            {searchTerm || roleFilter !== 'all' || dateFilter !== 'newest' 
+                                ? 'No matching registrations' 
+                                : 'No pending registrations'
+                            }
+                        </h3>
+                        <p className="text-gray-500 text-sm max-w-sm mx-auto mb-3">
+                            {searchTerm || roleFilter !== 'all' || dateFilter !== 'newest'
+                                ? 'Try adjusting your search criteria or filters'
                                 : 'All registration requests have been processed'
                             }
                         </p>
+                        {(searchTerm || roleFilter !== 'all' || dateFilter !== 'newest') && (
+                            <button
+                                onClick={clearFilters}
+                                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Clear Filters
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
 
-            {/* Mobile-Optimized Modal */}
-            {isModalOpen && selectedUser && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl sm:mx-4 max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
-                        {/* Modal Header - Mobile Optimized */}
-                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 sm:px-6 py-4">
-                            {/* Mobile Handle */}
-                            <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mb-3 sm:hidden" />
-                            
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-lg sm:text-xl font-semibold text-white">Review Registration</h2>
-                                <button
-                                    onClick={closeModal}
-                                    className="p-2 text-white/80 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Modal Content - Scrollable */}
-                        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-180px)] sm:max-h-[calc(90vh-180px)]">
-                            {/* User Header */}
-                            <div className="flex items-center mb-6">
-                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                                    {selectedUser.picUrl ? (
-                                        <img
-                                            src={selectedUser.picUrl}
-                                            alt={`${selectedUser.firstName} ${selectedUser.lastName}`}
-                                            className="w-full h-full object-cover rounded-2xl"
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = 'none';
-                                                if (e.currentTarget.nextElementSibling) {
-                                                    (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                                                }
-                                            }}
-                                        />
-                                    ) : null}
-                                    <div className={`w-full h-full flex items-center justify-center rounded-2xl ${selectedUser.picUrl ? 'hidden' : 'flex'}`}>
-                                        {getInitials(selectedUser.firstName + ' ' + selectedUser.lastName)}
-                                    </div>
-                                </div>
-                                <div className="ml-4 flex-1 min-w-0">
-                                    <h3 className="text-xl font-semibold text-gray-900 truncate">
-                                        {selectedUser.firstName} {selectedUser.lastName}
-                                    </h3>
-                                    <p className="text-gray-600 truncate">{selectedUser.role}</p>
-                                    <span className="inline-block px-3 py-1 rounded-full text-xs font-medium border mt-2 bg-amber-50 text-amber-700 border-amber-200">
-                                        Pending Review
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Details Grid - Mobile Optimized */}
-                            <div className="space-y-4 mb-8">
-                                <div className="bg-gray-50 rounded-xl p-4">
-                                    <div className="flex items-center mb-2">
-                                        <Mail className="w-5 h-5 text-gray-500 mr-3" />
-                                        <p className="text-sm font-medium text-gray-700">Email Address</p>
-                                    </div>
-                                    <p className="text-gray-900 break-all">{selectedUser.email}</p>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="bg-gray-50 rounded-xl p-4">
-                                        <div className="flex items-center mb-2">
-                                            <Building className="w-5 h-5 text-gray-500 mr-3" />
-                                            <p className="text-sm font-medium text-gray-700">Department</p>
-                                        </div>
-                                        <p className="text-gray-900">{selectedUser.department}</p>
-                                    </div>
-
-                                    <div className="bg-gray-50 rounded-xl p-4">
-                                        <div className="flex items-center mb-2">
-                                            <Users className="w-5 h-5 text-gray-500 mr-3" />
-                                            <p className="text-sm font-medium text-gray-700">Role</p>
-                                        </div>
-                                        <p className="text-gray-900">{selectedUser.role}</p>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gray-50 rounded-xl p-4">
-                                    <div className="flex items-center mb-2">
-                                        <Calendar className="w-5 h-5 text-gray-500 mr-3" />
-                                        <p className="text-sm font-medium text-gray-700">Registration Date</p>
-                                    </div>
-                                    <p className="text-gray-900">{formatDate(selectedUser.createdAt)}</p>
-                                </div>
-
-                                {selectedUser.phone && (
-                                    <div className="bg-gray-50 rounded-xl p-4">
-                                        <div className="flex items-center mb-2">
-                                            <svg className="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                            </svg>
-                                            <p className="text-sm font-medium text-gray-700">Phone Number</p>
-                                        </div>
-                                        <p className="text-gray-900">{selectedUser.phone}</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Action Buttons - Sticky Bottom */}
-                        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 sm:p-6">
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <button
-                                    onClick={() => handleReject(selectedUser.id)}
-                                    disabled={rejectMutation.isPending}
-                                    className="flex-1 px-6 py-3 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 min-h-[48px]"
-                                >
-                                    <UserX className="w-4 h-4" />
-                                    {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
-                                </button>
-                                <button
-                                    onClick={() => handleApprove(selectedUser.id)}
-                                    disabled={approveMutation.isPending}
-                                    className="flex-1 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 min-h-[48px]"
-                                >
-                                    <UserCheck className="w-4 h-4" />
-                                    {approveMutation.isPending ? 'Approving...' : 'Approve'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {/* ViewUser Component */}
+            {selectedUser && (
+                <ViewUser
+                    user={selectedUser}
+                    isOpen={isModalOpen}
+                    onClose={closeModal}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    isApproving={approveMutation.isPending}
+                    isRejecting={rejectMutation.isPending}
+                />
             )}
+
+            {/* Styles */}
+            <style jsx global>{`
+                .scrollbar-hide {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+                .scrollbar-hide::-webkit-scrollbar { 
+                    display: none;
+                }
+            `}</style>
         </div>
     );
 }
