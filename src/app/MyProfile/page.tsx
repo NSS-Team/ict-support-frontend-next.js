@@ -138,14 +138,13 @@ export default function MyProfilePage() {
     <div className="min-h-screen pb-20 bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-                  <p className="text-gray-600 mt-1">Manage your personal information and account settings</p>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="py-4 sm:py-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">My Profile</h1>
+                  <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your personal information and account settings</p>
                 </div>
               </div>
               {/* <button className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
@@ -157,19 +156,19 @@ export default function MyProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Profile Overview */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             {/* Profile Card */}
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="p-6 text-center">
-                <div className="relative inline-block mb-4">
+              <div className="p-4 sm:p-6 text-center">
+                <div className="relative inline-block mb-3 sm:mb-4">
                   {userData.picUrl ? (
                     <img
                       src={userData.picUrl}
                       alt="Profile"
-                      className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-lg"
                       onError={(e) => {
                         // Fallback to initials if image fails to load
                         const target = e.target as HTMLImageElement;
@@ -177,29 +176,29 @@ export default function MyProfilePage() {
                         const parent = target.parentElement;
                         if (parent) {
                           parent.innerHTML = `
-                            <div class="w-24 h-24 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center">
-                              <span class="text-2xl font-bold text-gray-600">${getInitials(userData.firstName, userData.lastName)}</span>
+                            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center">
+                              <span class="text-xl sm:text-2xl font-bold text-gray-600">${getInitials(userData.firstName, userData.lastName)}</span>
                             </div>
                           `;
                         }
                       }}
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center">
-                      <span className="text-2xl font-bold text-gray-600">{getInitials(userData.firstName, userData.lastName)}</span>
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center">
+                      <span className="text-xl sm:text-2xl font-bold text-gray-600">{getInitials(userData.firstName, userData.lastName)}</span>
                     </div>
                   )}
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-green-500 rounded-full border-2 border-white"></div>
                 </div>
 
-                <h2 className="text-xl font-bold text-gray-900 mb-1">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
                   {`${userData.firstName} ${userData.lastName}`}
                 </h2>
                 {userData.designation && (
-                  <p className="text-gray-600 mb-3">{userData.designation}</p>
+                  <p className="text-sm sm:text-base text-gray-600 mb-3">{userData.designation}</p>
                 )}
 
-                <div className="flex flex-col gap-2 mb-4">
+                <div className="flex flex-col gap-2 mb-3 sm:mb-4">
                   <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-medium ${getRoleColor(userData.role)}`}>
                     {getRoleIcon(userData.role)}
                     <span>{userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}</span>
@@ -212,17 +211,17 @@ export default function MyProfilePage() {
 
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-center justify-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    <span>{userData.email}</span>
+                    <Mail className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{userData.email}</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    <Phone className="w-4 h-4" />
+                    <Phone className="w-4 h-4 flex-shrink-0" />
                     <span>{userData.phone}</span>
                   </div>
                   {userData.department && (
                     <div className="flex items-center justify-center gap-2">
-                      <Building className="w-4 h-4" />
-                      <span>{userData.department}</span>
+                      <Building className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{userData.department}</span>
                     </div>
                   )}
                 </div>
@@ -231,29 +230,29 @@ export default function MyProfilePage() {
 
             {/* Account Stats */}
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-gray-600" />
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Award className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   Account Overview
                 </h3>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-600">Member Since</p>
-                      <p className="font-semibold text-gray-900">{formatDate(userData.createdAt)}</p>
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-600">Member Since</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">{formatDate(userData.createdAt)}</p>
                     </div>
                   </div>
                 </div>
                 
                 <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-emerald-600" />
-                    <div>
-                      <p className="text-sm text-gray-600">Last Updated</p>
-                      <p className="font-semibold text-gray-900">{formatLastUpdated(userData.updatedAt)}</p>
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-600">Last Updated</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">{formatLastUpdated(userData.updatedAt)}</p>
                     </div>
                   </div>
                 </div>
@@ -262,24 +261,24 @@ export default function MyProfilePage() {
 
             {/* Quick Actions */}
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-gray-600" />
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   Quick Actions
                 </h3>
               </div>
-              <div className="p-6 space-y-2">
+              <div className="p-4 sm:p-6 space-y-1 sm:space-y-2">
                 {/* <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
                   <Edit3 className="w-5 h-5 text-gray-600" />
                   <span className="font-medium text-gray-700">Edit Profile</span>
                 </button> */}
-                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-                  <Shield className="w-5 h-5 text-gray-600" />
-                  <span className="font-medium text-gray-700">Security Settings</span>
+                <button className="w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                  <span className="text-sm sm:text-base font-medium text-gray-700">Security Settings</span>
                 </button>
-                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-                  <Globe className="w-5 h-5 text-gray-600" />
-                  <span className="font-medium text-gray-700">Privacy Settings</span>
+                <button className="w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                  <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                  <span className="text-sm sm:text-base font-medium text-gray-700">Privacy Settings</span>
                 </button>
               </div>
             </div>
@@ -288,105 +287,105 @@ export default function MyProfilePage() {
           {/* Detailed Information */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                  <User className="w-6 h-6 text-gray-600" />
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
                   Personal Information
                 </h3>
-                <p className="text-gray-600 mt-1">Your current personal information and contact details</p>
+                <p className="text-sm sm:text-base text-gray-600 mt-1">Your current personal information and contact details</p>
               </div>
 
-              <div className="p-6">
-                <div className="grid md:grid-cols-2 gap-6">
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {/* First Name */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                       First Name
                     </label>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <User className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{userData.firstName}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.firstName}</span>
                     </div>
                   </div>
 
                   {/* Last Name */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                       Last Name
                     </label>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <User className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{userData.lastName}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.lastName}</span>
                     </div>
                   </div>
 
                   {/* Email */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                       Email Address
                     </label>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <Mail className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{userData.email}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.email}</span>
                     </div>
                   </div>
 
                   {/* Phone */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                       Phone Number
                     </label>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <Phone className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{userData.phone || 'Not provided'}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-900 font-medium">{userData.phone || 'Not provided'}</span>
                     </div>
                   </div>
 
                   {/* Department */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                       Department
                     </label>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <Building className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{userData.department || 'Not assigned'}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <Building className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.department || 'Not assigned'}</span>
                     </div>
                   </div>
 
                   {/* Designation */}
 
                   {userRole !== 'manager' && userRole !== 'worker' && <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                       Job Title
                     </label>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <Briefcase className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{userData.designation || 'Not specified'}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.designation || 'Not specified'}</span>
                     </div>
                   </div>}
 
                   {/* Office Number */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                       Office Number
                     </label>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <MapPin className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-900 font-medium">{userData.officeNumber || 'Not assigned'}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-900 font-medium">{userData.officeNumber || 'Not assigned'}</span>
                     </div>
                   </div>
 
                   {/* Role */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                       Role & Status
                     </label>
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         {getRoleIcon(userData.role)}
-                        <span className="text-gray-900 font-medium">{userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}</span>
+                        <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}</span>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(userData.role)}`}>
+                      <div className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border flex-shrink-0 ${getRoleColor(userData.role)}`}>
                         Active
                       </div>
                     </div>
