@@ -6,5 +6,7 @@ export const complaintStatusColorMap: Record<string, string> = {
   closed: 'bg-gray-800',
   escalated_level_1: 'bg-orange-600',
   escalated_level_2: 'bg-red-600',
+  reopened: 'bg-purple-600',
+  in_queue: 'bg-teal-600',
   default: 'bg-gray-400',
 };

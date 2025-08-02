@@ -4,34 +4,34 @@ import { useEffect, useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { api } from '~/trpc/react'; // tRPC hooks
 import { User2, X, Users, Clock, CheckCircle, Plus, Minus, UserPlus } from 'lucide-react';
-import type { TeamWorker } from '~/types/teams/teamWorker';
+import type { WorkerAssignment } from '~/types/teams/workerAssignment';
 import { useRouter } from 'next/navigation';
 
 interface MyTeamPopupProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  complainId: number;
-  assignedWorkers: TeamWorker[] | undefined;
+  complaintId: number;
+  assignedWorkers: WorkerAssignment[] | undefined;
 }
 
-export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers }: MyTeamPopupProps) {
+export default function MyTeamPopup({ open, setOpen, complaintId, assignedWorkers }: MyTeamPopupProps) {
   const router = useRouter();
   
   // State for selected workers to assign
-  const [selectedWorkers, setSelectedWorkers] = useState<TeamWorker[]>([]);
+  const [selectedWorkers, setSelectedWorkers] = useState<WorkerAssignment[]>([]);
   const [isAssigning, setIsAssigning] = useState(false);
 
   // fetching the team workers
-  const { data: getTeamWorkersResponse, refetch: refetchMyTeamWorkers, isLoading } = api.teams.getTeamWorkers.useQuery(undefined, { enabled: open });
+  const { data: getTeamWorkersResponse, refetch: refetchMyTeamWorkers, isLoading } = api.teams.getWorkersWhileAssignment.useQuery({ complaintId }, { enabled: open });
   // api call to assign ticket to multiple workers
   const assignTicketToWorkers = api.complaints.assignComplainToWorkers.useMutation();
-  const [workers, setWorkers] = useState<TeamWorker[]>([]);
+  const [workers, setWorkers] = useState<WorkerAssignment[]>([]);
 
   useEffect(() => {
     if (getTeamWorkersResponse) {
       // Filter out any undefined values before setting state
       const validWorkers = (getTeamWorkersResponse?.data?.workers || []).filter(
-        (worker): worker is TeamWorker => worker !== undefined
+        (worker : WorkerAssignment): worker is WorkerAssignment => worker !== undefined
       );
       setWorkers(validWorkers);
     }
@@ -55,7 +55,7 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
   };
 
   // Function to toggle worker selection
-  const toggleWorkerSelection = (worker: TeamWorker) => {
+  const toggleWorkerSelection = (worker: WorkerAssignment) => {
     if (isWorkerSelected(worker.workerId)) {
       // Remove from selection
       setSelectedWorkers(prev => prev.filter(w => w.workerId !== worker.workerId));
@@ -80,7 +80,7 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
 
       const response = await assignTicketToWorkers.mutateAsync({
         workerId: assignments,
-        complaintId: complainId
+        complaintId: complaintId
       });
       
       console.log('Workers assigned successfully:', response);
@@ -208,10 +208,13 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                 </div>
               ) : (
                 <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
-                  {workers?.map((worker: TeamWorker, index: number) => {
+                  {workers?.map((worker: WorkerAssignment, index: number) => {
                     const isAssigned = isWorkerAssigned(worker.workerId);
                     const isSelected = isWorkerSelected(worker.workerId);
-                    const canSelect = !isAssigned && worker.status !== 'busy';
+                    const isBusyButNear = worker.status === 'busy' && worker.near === true;
+                    const isBusyAndFar = worker.status === 'busy' && worker.near === false;
+                    const canSelect = !isAssigned && !isBusyAndFar;
+                    const isRecommended = isBusyButNear;
                     
                     return (
                       <div
@@ -222,7 +225,9 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                             ? 'border-green-200 bg-green-50/70'
                             : isSelected
                             ? 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200'
-                            : worker.status === 'busy'
+                            : isRecommended
+                            ? 'border-orange-300 bg-orange-50 ring-2 ring-orange-200 cursor-pointer'
+                            : isBusyAndFar
                             ? 'border-slate-200/60 bg-slate-50/70 opacity-75'
                             : 'border-slate-200/60 hover:border-blue-200 hover:bg-blue-50/40 cursor-pointer'
                         }`}
@@ -238,6 +243,8 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                                 ? 'bg-gradient-to-br from-green-100 to-green-200'
                                 : isSelected
                                 ? 'bg-gradient-to-br from-emerald-100 to-emerald-200'
+                                : isRecommended
+                                ? 'bg-gradient-to-br from-orange-100 to-orange-200'
                                 : 'bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-blue-100 group-hover:to-blue-200'
                             }`}>
                               <User2 className={`w-6 h-6 transition-colors duration-300 ${
@@ -245,6 +252,8 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                                   ? 'text-green-600' 
                                   : isSelected
                                   ? 'text-emerald-600'
+                                  : isRecommended
+                                  ? 'text-orange-600'
                                   : 'text-slate-600 group-hover:text-blue-600'
                               }`} />
                             </div>
@@ -253,8 +262,10 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                                 ? 'bg-green-500'
                                 : isSelected
                                 ? 'bg-emerald-500'
-                                : worker.status === 'busy' 
-                                ? 'bg-amber-400' 
+                                : isRecommended
+                                ? 'bg-orange-500'
+                                : isBusyAndFar 
+                                ? 'bg-red-500' 
                                 : 'bg-slate-400'
                             }`}>
                               {isAssigned && (
@@ -269,22 +280,33 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                           {/* Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <p className={`font-medium truncate transition-colors duration-300 ${
-                                isAssigned 
-                                  ? 'text-green-900' 
-                                  : isSelected
-                                  ? 'text-emerald-900'
-                                  : 'text-slate-900 group-hover:text-blue-900'
-                              }`}>
-                                {worker.workerName}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className={`font-medium truncate transition-colors duration-300 ${
+                                  isAssigned 
+                                    ? 'text-green-900' 
+                                    : isSelected
+                                    ? 'text-emerald-900'
+                                    : isRecommended
+                                    ? 'text-orange-900'
+                                    : 'text-slate-900 group-hover:text-blue-900'
+                                }`}>
+                                  {worker.workerName}
+                                </p>
+                                {isRecommended && (
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 rounded-full">
+                                    Recommended
+                                  </span>
+                                )}
+                              </div>
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${
                                 isAssigned
                                   ? 'bg-green-100 text-green-700 border-green-200'
                                   : isSelected
                                   ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                  : worker.status === 'busy'
-                                  ? 'bg-amber-100 text-amber-700 border-amber-200'
+                                  : isRecommended
+                                  ? 'bg-orange-100 text-orange-700 border-orange-200'
+                                  : isBusyAndFar
+                                  ? 'bg-red-100 text-red-700 border-red-200'
                                   : 'bg-slate-100 text-slate-700 border-slate-200'
                               }`}>
                                 <span className={`w-1.5 h-1.5 rounded-full mr-1 ${
@@ -292,11 +314,21 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                                     ? 'bg-green-400'
                                     : isSelected
                                     ? 'bg-emerald-400'
-                                    : worker.status === 'busy' 
-                                    ? 'bg-amber-400' 
+                                    : isRecommended
+                                    ? 'bg-orange-400'
+                                    : isBusyAndFar 
+                                    ? 'bg-red-400' 
                                     : 'bg-slate-400'
                                 }`} />
-                                {isAssigned ? 'Assigned' : isSelected ? 'Selected' : worker.status === 'busy' ? 'Busy' : 'Available'}
+                                {isAssigned 
+                                  ? 'Assigned' 
+                                  : isSelected 
+                                  ? 'Selected' 
+                                  : isRecommended
+                                  ? 'Busy (Near)'
+                                  : isBusyAndFar 
+                                  ? 'Busy (Far)' 
+                                  : 'Available'}
                               </span>
                             </div>
                             <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-slate-500 font-mono">
@@ -315,9 +347,10 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                             <CheckCircle className="w-4 h-4" />
                             Assigned
                           </div>
-                        ) : worker.status === 'busy' ? (
-                          <div className="px-4 py-2 bg-gray-200 text-gray-500 text-sm font-medium rounded-lg cursor-not-allowed opacity-60">
-                            Busy
+                        ) : isBusyAndFar ? (
+                          <div className="px-4 py-2 bg-red-200 text-red-600 text-sm font-medium rounded-lg cursor-not-allowed opacity-60 flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            Busy (Far)
                           </div>
                         ) : (
                           <button
@@ -328,6 +361,8 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                             className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 flex items-center gap-2 ${
                               isSelected
                                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-300'
+                                : isRecommended
+                                ? 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-orange-300 shadow-md'
                                 : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md focus:ring-blue-300'
                             }`}
                           >
@@ -339,7 +374,7 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                             ) : (
                               <>
                                 <Plus className="w-4 h-4" />
-                                Select
+                                {isRecommended ? 'Select (Near)' : 'Select'}
                               </>
                             )}
                           </button>
@@ -358,6 +393,12 @@ export default function MyTeamPopup({ open, setOpen, complainId, assignedWorkers
                   <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
                   <p className="text-sm text-slate-600 font-medium">
                     {workers.filter(w => !isWorkerAssigned(w.workerId) && w.status !== 'busy').length} available
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                  <p className="text-sm text-orange-600 font-medium">
+                    {workers.filter(w => !isWorkerAssigned(w.workerId) && w.status === 'busy' && w.near === true).length} recommended
                   </p>
                 </div>
                 {assignedCount > 0 && (

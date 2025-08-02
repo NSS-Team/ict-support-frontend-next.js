@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, User, MapPin, Clock, Paperclip, Settings, Trash2, MoreVertical, Send } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, Paperclip, Settings, Trash2, MoreVertical, Send, UserPlus } from 'lucide-react';
 import { api } from '~/trpc/react';
 import { format } from 'date-fns';
 import Loader from '~/app/_components/Loader';
@@ -13,7 +13,6 @@ import { useState } from 'react';
 import MyTeamPopup from '~/app/ticket/myTeamPopups';
 import ForwardTeamPopup from '~/app/ticket/forwardComplaintPopup';
 import { useUser } from '@clerk/nextjs';
-import Link from 'next/link';
 import type { log } from '~/types/logs/log';
 import { useEffect } from 'react';
 import { useToast } from '~/app/_components/ToastProvider';
@@ -37,6 +36,8 @@ export default function TicketDetailPage() {
   const [isForwardTeamPopupOpen, setIsForwardTeamPopupOpen] = useState(false);
   // to toggle the close ticket modal, this is only for workers
   const [showCloseModal, setShowCloseModal] = useState(false);
+  // to toggle the add worker popup
+  const [isAddWorkerPopupOpen, setIsAddWorkerPopupOpen] = useState(false);
 
   // const [shouldFetchTeams, setShouldFetchTeams] = useState(false);
   // const [shouldFetchMyTeamMembers, setShouldFetchMyTeamMembers] = useState(false);
@@ -63,6 +64,14 @@ export default function TicketDetailPage() {
   const MyTeamId: number | null = user?.publicMetadata?.teamId as number | null;
   // const MyTeamName: string | null = user?.publicMetadata?.teamName as string | null;
 
+  // api call to add a worker to the existing assignment of ticket
+  const {
+    mutate: addWorkerToAssignment,
+    isPending: isAddingWorker,
+    isSuccess: isAddWorkerSuccess,
+    isError: isAddWorkerError,
+    error: addWorkerError,
+  } = api.complaints.addWorkerToAssignment.useMutation();
 
   useEffect(() => {
     if (isDeleteSuccess) {
@@ -83,6 +92,19 @@ export default function TicketDetailPage() {
       alert('Failed to delete the complaint. Please try again later.');
     }
   }, [isDeleteSuccess, isDeleteError, deleteError, user, router]);
+
+  useEffect(() => {
+    if (isAddWorkerSuccess) {
+      addToast('Worker added to assignment successfully!', 'success');
+      router.refresh();
+      setIsAddWorkerPopupOpen(false);
+    }
+
+    if (isAddWorkerError) {
+      console.error('Error adding worker:', addWorkerError);
+      addToast('Failed to add worker to assignment. Please try again.', 'error');
+    }
+  }, [isAddWorkerSuccess, isAddWorkerError, addWorkerError, router, addToast]);
 
 
   if (isLoading || !isLoaded) {
@@ -166,6 +188,20 @@ export default function TicketDetailPage() {
                 >
                   <User className="h-4 w-4 mr-2" />
                   Assign
+                </button>
+              )}
+              {(complaint?.status === "in_progress" || complaint?.status === "assigned") || complaint?.status === "in_queue" && user?.publicMetadata?.role === 'manager' && (
+                <button 
+                  className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => { setIsAddWorkerPopupOpen(true); console.log('Adding worker to assignment...'); }}
+                  disabled={isAddingWorker}
+                >
+                  {isAddingWorker ? (
+                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <UserPlus className="h-4 w-4 mr-2" />
+                  )}
+                  Add Worker
                 </button>
               )}
               {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
@@ -517,7 +553,27 @@ export default function TicketDetailPage() {
               <MyTeamPopup
                 open={isMyTeamPopupOpen}
                 setOpen={setIsMyTeamPopupOpen}
-                complainId={ticketId}
+                complaintId={ticketId}
+                assignedWorkers={
+                  complaint?.assignedWorkers
+                    ? complaint.assignedWorkers.map((worker: any) => ({
+                      workerId: worker.workerId,
+                      workerUserId: worker.workerUserId ?? '',
+                      teamId: worker.teamId ?? 0,
+                      workerName: worker.workerName ?? worker.name ?? 'Unknown',
+                      status: worker.status ?? 'active',
+                    }))
+                    : undefined
+                }
+              />
+            }
+
+            {/* Add Worker Popup - Reusing MyTeamPopup for adding workers */}
+            {
+              <MyTeamPopup
+                open={isAddWorkerPopupOpen}
+                setOpen={setIsAddWorkerPopupOpen}
+                complaintId={ticketId}
                 assignedWorkers={
                   complaint?.assignedWorkers
                     ? complaint.assignedWorkers.map((worker: any) => ({

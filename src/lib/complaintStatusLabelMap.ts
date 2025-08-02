@@ -6,5 +6,8 @@ export const complaintStatusLabelMap: Record<string, string> = {
   closed: 'Closed',
   escalated_level_1: 'Escalated (Level 1)',
   escalated_level_2: 'Escalated (Level 2)',
+  reopened: 'Reopened',
+  in_queue: 'In Queue',
   default: 'Unknown',
+
 };

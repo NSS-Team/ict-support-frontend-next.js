@@ -96,10 +96,10 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
             }`}
           >
             <div className="space-y-3">
-              <div>
+              {/* <div>
                 <dt className="text-xs font-medium text-gray-500 mb-1">Assigned Worker</dt>
                 <dd className="text-sm text-gray-900">{ticket?.assignedWorkerId || 'Not assigned'}</dd>
-              </div>
+              </div> */}
               <div>
                 <dt className="text-xs font-medium text-gray-500 mb-1">Preferred Mode</dt>
                 <dd className="text-sm text-gray-900">{ticket?.submissionPreference || 'Not specified'}</dd>
@@ -166,10 +166,10 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
           {/* Details Grid */}
           <div className="border-t border-gray-100 pt-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div>
+              {/* <div>
                 <dt className="text-sm font-medium text-gray-500 mb-1">Assigned Worker</dt>
-                <dd className="text-sm text-gray-900">{ticket?.assignedWorkerId || 'Not assigned'}</dd>
-              </div>
+                <dd className="text-sm text-gray-900">{ticket?.assignedWorker || 'Not assigned'}</dd>
+              </div> */}
               <div>
                 <dt className="text-sm font-medium text-gray-500 mb-1">Preferred Mode</dt>
                 <dd className="text-sm text-gray-900">{ticket?.submissionPreference || 'Not specified'}</dd>

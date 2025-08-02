@@ -21,7 +21,7 @@ export default function MyTeamPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [workers, setWorkers] = useState<TeamWorker[]>([]);
 
-  const { data: getTeamWorkersResponse, isLoading, isError } = api.teams.getTeamWorkers.useQuery();
+  const { data: getTeamWorkersResponse, isLoading, isError } = api.teams.myTeam.useQuery();
 
   const { data: userInfo, isLoading: isUserInfoLoading } = api.users.getUserInfo.useQuery(
     { id: selectedUserId ?? '' },

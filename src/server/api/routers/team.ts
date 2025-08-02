@@ -20,13 +20,34 @@ export const teamsRouter = createTRPCRouter({
 
 
     // to fetch the worker of a team
-    getTeamWorkers: publicProcedure
-        .query(async ({ ctx }) => {
+    getWorkersWhileAssignment: publicProcedure
+        .input(z.object({ complaintId: z.number() }))
+        .query(async ({ ctx, input }) => {
             const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/team`;
-            const res = await fetch(`${BASE_URL}/teamWorkers`, {
+            const res = await fetch(`${BASE_URL}/getWorkers/${input.complaintId}`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${ctx.token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+            const json = await res.json();
+            console.log("raw response workers", json.data.workers);
+            // const validated = getTeamWorkersResponseSchema.parse(json);
+            // console.log("validated response", validated);
+            return json;
+        }),
+
+
+
+    myTeam: publicProcedure
+        .query(async ({ ctx }) => {
+            const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/team`;
+            const res = await fetch(`${BASE_URL}/myTeam`, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${ctx.token}`,
+                    "Content-Type": "application/json",
                 },
             });
             const json = await res.json();
