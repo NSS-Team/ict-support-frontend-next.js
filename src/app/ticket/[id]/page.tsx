@@ -16,7 +16,7 @@ import { useUser } from '@clerk/nextjs';
 import type { log } from '~/types/logs/log';
 import { useEffect } from 'react';
 import { useToast } from '~/app/_components/ToastProvider';
-import CloseTicketPopup from '~/app/ticket/closeTicketPopup';
+import MarkCompleteTicketPopup from '~/app/ticket/MarkCompleteTicketPopup';
 import LoginRequired from '~/app/_components/unauthorized/loginToContinue';
 import ErrorLoading from '~/app/_components/unauthorized/errorLoading';
 import AssignedWorkersCard from '~/app/ticket/assignedWorkersCard';
@@ -47,6 +47,8 @@ export default function TicketDetailPage() {
   const { data: ticket, isLoading, error } = api.complaints.getComplainInfo.useQuery({ id });
   const complaint = ticket?.data?.complaint;
   const attachments = ticket?.data?.attachments || [];
+  console.log("attachments:", attachments)
+  const workers = ticket?.data?.complaint?.assignedWorkers || [];
 
   // api to fetch the complaint logs
   const { data: getComplaintLogsResponse, refetch: refetchLogs, isLoading: isLogsLoading } = api.complaints.getComplaintLogs.useQuery({ complaintId: id });
@@ -176,10 +178,10 @@ export default function TicketDetailPage() {
 
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center space-x-3">
-              {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && (
-                <button className="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => setShowCloseModal(true)}>
+              {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && complaint?.status !== 'resolved' && (
+                <button className="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => setShowCloseModal(true)}>
                   <Clock className="h-4 w-4 mr-2" />
-                  Close Ticket
+                  Resolve
                 </button>
               )}
               {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
@@ -231,13 +233,13 @@ export default function TicketDetailPage() {
         <div className="lg:hidden px-4 py-3 bg-gray-50 border-t border-gray-200 w-full">
           <div className="flex space-x-2 max-w-full overflow-x-auto">
             {/* Close Ticket Button for Workers */}
-            {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && (
+            {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && complaint?.status !== 'resolved' && (
               <button 
-                className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
+                className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
                 onClick={() => setShowCloseModal(true)}
               >
                 <Clock className="h-4 w-4 mr-2" />
-                Close Ticket
+                Resolve
               </button>
             )}
 
@@ -619,7 +621,7 @@ export default function TicketDetailPage() {
             complainId={id} 
             MyTeamId={MyTeamId} />
 
-            <CloseTicketPopup
+            <MarkCompleteTicketPopup
               open={showCloseModal}
               setOpen={setShowCloseModal}
               ticketId={id}

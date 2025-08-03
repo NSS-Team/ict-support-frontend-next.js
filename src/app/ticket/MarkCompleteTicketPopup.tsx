@@ -14,7 +14,7 @@ interface CloseTicketPopupProps {
 
 type Upload = { file: File; note: string; type: string };
 
-export default function CloseTicketPopup({ open, setOpen, ticketId }: CloseTicketPopupProps) {
+export default function MarkCompleteTicketPopup({ open, setOpen, ticketId }: CloseTicketPopupProps) {
   const { addToast } = useToast();
   
   const [resolution, setResolution] = useState('');
@@ -24,15 +24,15 @@ export default function CloseTicketPopup({ open, setOpen, ticketId }: CloseTicke
   const [uploadProgress, setUploadProgress] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // API call to close the ticket 
-  const closeTicket = api.complaints.resolveComplaint.useMutation({
+  // API call to resolve the ticket
+  const resolveTicket = api.complaints.resolveComplaint.useMutation({
     onSuccess: () => {
-      addToast('Ticket closed successfully!');
+      addToast('Ticket Resolved successfully!');
       setOpen(false);
     },
     onError: (error) => {
-      console.error('Error closing ticket:', error);
-      addToast('Failed to close ticket. Please try again.');
+      console.error('Error resolving ticket:', error);
+      addToast('Failed to Resolve ticket. Please try again.');
       setIsSubmitting(false);
       setUploadProgress('');
     },
@@ -167,7 +167,7 @@ export default function CloseTicketPopup({ open, setOpen, ticketId }: CloseTicke
       setUploadProgress('Finalizing ticket closure...');
       
       // Call the API to close the ticket
-      await closeTicket.mutateAsync({
+      await resolveTicket.mutateAsync({
         complaintId: ticketId,
         resolvedSummary: resolution,
         uploads: uploadsWithUrls,
@@ -183,11 +183,11 @@ export default function CloseTicketPopup({ open, setOpen, ticketId }: CloseTicke
 
   // Reset submitting state when mutation completes
   useEffect(() => {
-    if (!closeTicket.isPending) {
+    if (!resolveTicket.isPending) {
       setIsSubmitting(false);
       setUploadProgress('');
     }
-  }, [closeTicket.isPending]);
+  }, [resolveTicket.isPending]);
 
   if (!open) return null;
 
@@ -233,7 +233,7 @@ export default function CloseTicketPopup({ open, setOpen, ticketId }: CloseTicke
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">
-                    Close Ticket
+                    Resolve Ticket
                   </h2>
                   {/* <p className="text-sm text-slate-500 mt-0.5">
                     {ticketTitle ? `Closing: ${ticketTitle}` : `Ticket ID: ${ticketId}`}
