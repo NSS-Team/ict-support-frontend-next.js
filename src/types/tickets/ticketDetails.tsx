@@ -3,6 +3,7 @@ import { z } from "zod";
 
 // now we will extend the complaint schema to include uploads
 import ticketSchema from "~/types/tickets/ticket";
+import { workerComplaintStatusEnum } from "../enums";
 
 // extending the ticket schema to include uploads
 export const ticketDetailsSchema = ticketSchema.extend({
@@ -19,7 +20,12 @@ export const ticketDetailsSchema = ticketSchema.extend({
   escalationLevel: z.number().min(0).max(3).optional().nullable(),
   teamId: z.number().min(1),
   location: z.string(),
-  assignedWorkerName: z.string().optional().nullable(),
+  assignedWorkers: z.array(z.object({
+      workerId: z.number(),
+      workerName: z.string(),
+      workerPic: z.string().url(),
+      workerStatus: workerComplaintStatusEnum.optional(),
+    })),
 });
 
 // type for the extended ticket schema

@@ -4,13 +4,15 @@
 // it shows the first worker and a dropdown for all assigned workers
 import { useState } from 'react';
 import { User, AlertTriangle } from 'lucide-react';
+import type { WorkerComplaintStatus } from '~/types/enums';
 
 interface AssignedWorker {
   workerId: number;
   workerName: string;
   workerUserId?: string;
   teamId?: number;
-  status?: string;
+  status?: WorkerComplaintStatus;
+  picUrl?: string; // optional URL for worker's profile picture
 }
 
 interface AssignedWorkersCardProps {
@@ -19,6 +21,8 @@ interface AssignedWorkersCardProps {
 
 export default function AssignedWorkersCard({ assignedWorkers }: AssignedWorkersCardProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  console.log("Assigned Workers:", assignedWorkers);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -37,18 +41,48 @@ export default function AssignedWorkersCard({ assignedWorkers }: AssignedWorkers
                   className="w-full flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                      {assignedWorkers[0]?.workerName?.charAt(0)?.toUpperCase() || 'U'}
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                      {assignedWorkers[0]?.picUrl ? (
+                        <img 
+                          src={assignedWorkers[0].picUrl} 
+                          alt={assignedWorkers[0]?.workerName || 'Worker'} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
+                          {assignedWorkers[0]?.workerName?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
+                      )}
                     </div>
                     <div className="text-left">
                       <p className="text-base font-semibold text-gray-900">
                         {assignedWorkers[0]?.workerName || 'Unknown'}
                       </p>
-                      {assignedWorkers.length > 1 && (
-                        <p className="text-xs text-blue-600">
-                          +{assignedWorkers.length - 1} more worker{assignedWorkers.length - 1 !== 1 ? 's' : ''}
-                        </p>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {/* Status indicator for the first worker */}
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                          assignedWorkers[0]?.status === 'active' 
+                            ? 'bg-green-100 text-green-700'
+                            : assignedWorkers[0]?.status === 'in_queue'
+                            ? 'bg-blue-100 text-blue-700'
+                            : assignedWorkers[0]?.status === 'resolved'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {assignedWorkers[0]?.status === 'active' 
+                            ? 'Active'
+                            : assignedWorkers[0]?.status === 'in_queue'
+                            ? 'In Queue'
+                            : assignedWorkers[0]?.status === 'resolved'
+                            ? 'Resolved'
+                            : 'Unknown'}
+                        </span>
+                        {assignedWorkers.length > 1 && (
+                          <p className="text-xs text-blue-600">
+                            +{assignedWorkers.length - 1} more worker{assignedWorkers.length - 1 !== 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -69,8 +103,18 @@ export default function AssignedWorkersCard({ assignedWorkers }: AssignedWorkers
                       </div>
                       {assignedWorkers.map((worker, index) => (
                         <div key={worker.workerId || index} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-md transition-colors">
-                          <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0">
-                            {worker.workerName?.charAt(0)?.toUpperCase() || 'U'}
+                          <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
+                            {worker.picUrl ? (
+                              <img 
+                                src={worker.picUrl} 
+                                alt={worker.workerName || 'Worker'} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-medium">
+                                {worker.workerName?.charAt(0)?.toUpperCase() || 'U'}
+                              </div>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">
@@ -81,10 +125,32 @@ export default function AssignedWorkersCard({ assignedWorkers }: AssignedWorkers
                             </p>
                           </div>
                           <div className="flex-shrink-0">
-                            {/* <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1"></span>
-                              {worker.status === 'active' ? 'Active' : worker.status || 'Active'}
-                            </span> */}
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              worker.status === 'active' 
+                                ? 'bg-green-100 text-green-800 border border-green-200'
+                                : worker.status === 'in_queue'
+                                ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                : worker.status === 'resolved'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                : 'bg-gray-100 text-gray-800 border border-gray-200'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full mr-1 ${
+                                worker.status === 'active' 
+                                  ? 'bg-green-400'
+                                  : worker.status === 'in_queue'
+                                  ? 'bg-blue-400'
+                                  : worker.status === 'resolved'
+                                  ? 'bg-emerald-400'
+                                  : 'bg-gray-400'
+                              }`}></span>
+                              {worker.status === 'active' 
+                                ? 'Active'
+                                : worker.status === 'in_queue'
+                                ? 'In Queue'
+                                : worker.status === 'resolved'
+                                ? 'Resolved'
+                                : 'Unknown'}
+                            </span>
                           </div>
                         </div>
                       ))}

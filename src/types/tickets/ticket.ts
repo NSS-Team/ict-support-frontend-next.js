@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {submissionPreferenceEnum, complaintStatusEnum, priorityEnum} from "../enums";
+import {submissionPreferenceEnum, complaintStatusEnum, priorityEnum, workerComplaintStatusEnum} from "../enums";
 
 
 export const ticketSchema = z.object({
@@ -12,10 +12,7 @@ export const ticketSchema = z.object({
   submissionPreference: submissionPreferenceEnum,
   status: complaintStatusEnum,
   priority: priorityEnum,
-  assignedWorkers: z.array(z.object({
-    workerId: z.number(),
-    workerName: z.string(),
-  })),
+  
   createdAt: z.string(),
   categoryName: z.string(),
   subCategoryName: z.string(),

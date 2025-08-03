@@ -27,3 +27,6 @@ export type AttachmentRole = z.infer<typeof attachmentRoleEnum>;
 
 export const attachmentExtensionEnum = z.enum(["jpg", "jpeg", "png", "pdf", ".mp4", "mp3", "docx", "xlsx"]);
 export type AttachmentExtension = z.infer<typeof attachmentExtensionEnum>;
+
+export const workerComplaintStatusEnum = z.enum(["active","in_queue", "resolved"]);
+export type WorkerComplaintStatus = z.infer<typeof workerComplaintStatusEnum>;

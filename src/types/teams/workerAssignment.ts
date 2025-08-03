@@ -12,6 +12,8 @@ import { teamWorkerSchema } from "./teamWorker";
 
 export const workerAssignmentSchema = teamWorkerSchema.extend({
     near: boolean().optional(),
+    queueCount: z.number().optional(),
+    isAssignedToThisComplaint: z.boolean().optional(),
 });
 
 export type WorkerAssignment = z.infer<typeof workerAssignmentSchema>;

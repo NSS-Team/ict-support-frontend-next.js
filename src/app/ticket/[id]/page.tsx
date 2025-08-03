@@ -228,68 +228,101 @@ export default function TicketDetailPage() {
         </div>
 
         {/* Mobile Action Bar */}
-        {/* <div className="lg:hidden px-4 py-3 bg-gray-50 border-t border-gray-200 w-full">
-          <div className="flex space-x-2 max-w-full">
+        <div className="lg:hidden px-4 py-3 bg-gray-50 border-t border-gray-200 w-full">
+          <div className="flex space-x-2 max-w-full overflow-x-auto">
+            {/* Close Ticket Button for Workers */}
+            {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && (
+              <button 
+                className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
+                onClick={() => setShowCloseModal(true)}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Close Ticket
+              </button>
+            )}
+
+            {/* Assign Button for Managers */}
             {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
-              <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+              <button 
+                className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
+                onClick={() => { setIsMyTeamPopupOpen(true); console.log('Assigning ticket...'); }}
+              >
                 <User className="h-4 w-4 mr-2" />
                 Assign
               </button>
             )}
+
+            {/* Add Worker Button for Managers */}
+            {(complaint?.status === "in_progress" || complaint?.status === "assigned" || complaint?.status === "in_queue") && user?.publicMetadata?.role === 'manager' && (
+              <button 
+                className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => { setIsAddWorkerPopupOpen(true); console.log('Adding worker to assignment...'); }}
+                disabled={isAddingWorker}
+              >
+                {isAddingWorker ? (
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <UserPlus className="h-4 w-4 mr-2" />
+                )}
+                Add Worker
+              </button>
+            )}
+
+            {/* Forward Complaint Button for Managers */}
             {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
-              <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                <User className="h-4 w-4 mr-2" />
-                Forward Complaint
+              <button 
+                className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
+                onClick={() => { setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...'); }}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Forward
               </button>
             )}
 
-            {user?.publicMetadata?.role === 'worker' && (
-              <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors">
-                <Clock className="h-4 w-4 mr-2" />
-                Close
-              </button>
-            )}
-
+            {/* Delete Button for Employees */}
             {user?.publicMetadata?.role === 'employee' && complaint?.status === "waiting_assignment" && (
-              <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDeleteComplaint(id)}>
+              <button 
+                className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"
+                onClick={() => handleDeleteComplaint(id)}
+              >
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
           </div>
-        </div> */}
+        </div>
       </header>
 
-      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 pb-32 overflow-hidden">
+      <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-32 overflow-hidden">
         {/* Priority Banner - Mobile Optimized */}
-        <div className="mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 sm:py-6">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="mb-4 sm:mb-6">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6">
+              <div className="flex flex-col gap-3 sm:gap-4">
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 break-words">{complaint?.title}</h2>
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2 break-words leading-tight">{complaint?.title}</h2>
                   <p className="text-gray-700 text-sm sm:text-base leading-relaxed">{complaint?.customDescription}</p>
                 </div>
               </div>
             </div>
 
             {/* Status Pills - Mobile Scrollable */}
-            <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-100 w-full">
-              <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:overflow-visible sm:flex-wrap -mx-1 px-1">
-                <div className="flex items-center gap-2 whitespace-nowrap">
+            <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-100 w-full">
+              <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 sm:pb-0 sm:overflow-visible sm:flex-wrap -mx-1 px-1">
+                <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Priority</span>
-                  <span className={`inline-flex text-white items-center px-3 py-1 text-xs font-semibold rounded-full ${priorityColorMap[complaint?.priority?.toLowerCase() ?? ''] || priorityColorMap.default}`}>
+                  <span className={`inline-flex text-white items-center px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${priorityColorMap[complaint?.priority?.toLowerCase() ?? ''] || priorityColorMap.default}`}>
                     {complaint?.priority}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
-                  <span className={`inline-flex text-white items-center px-3 py-1 text-xs font-semibold rounded-full ${complaintStatusColorMap[complaint?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default}`}>
+                  <span className={`inline-flex text-white items-center px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${complaintStatusColorMap[complaint?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default}`}>
                     {complaint?.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Level</span>
-                  <span className="inline-flex items-center px-3 py-1 text-xs font-semibold bg-gray-200 text-gray-800 rounded-full">
+                  <span className="inline-flex items-center px-2 sm:px-3 py-1 text-xs font-semibold bg-gray-200 text-gray-800 rounded-full">
                     {complaint?.escalationLevel}
                   </span>
                 </div>
@@ -299,12 +332,12 @@ export default function TicketDetailPage() {
         </div>
 
         {/* Responsive Grid Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Main Content - Full width on mobile, 2/3 on desktop */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="xl:col-span-2 space-y-4 sm:space-y-6">
 
             {/* Quick Stats - Mobile Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 
 
               {/* assignedWorkersCard component */}
@@ -316,7 +349,8 @@ export default function TicketDetailPage() {
                         workerUserId: worker.workerUserId ?? '',
                         teamId: worker.teamId ?? 0,
                         workerName: worker.workerName ?? worker.name ?? 'Unknown',
-                        status: worker.status ?? 'active',
+                        status: worker.workerStatus ?? 'none',
+                        picUrl: worker.workerPic || '', // optional URL for worker's profile picture
                       }))
                     : undefined
                 }
@@ -325,44 +359,44 @@ export default function TicketDetailPage() {
 
 
 
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-50 rounded-lg">
-                    <MapPin className="h-5 w-5 text-green-600" />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-green-50 rounded-lg flex-shrink-0">
+                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-500">Location</p>
-                    <p className="text-base font-semibold text-gray-900 truncate">{complaint?.location}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-500">Location</p>
+                    <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">{complaint?.location}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Technical Details Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Settings className="h-5 w-5 text-gray-500" />
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+              <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gray-50">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                   Technical Information
                 </h3>
               </div>
-              <div className="p-4 sm:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="p-3 sm:p-4 lg:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-500">Device</label>
-                    <p className="text-gray-900 font-medium break-words">{complaint?.device || 'Not specified'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-500">Device</label>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium break-words">{complaint?.device || 'Not specified'}</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-500">Category</label>
-                    <p className="text-gray-900 font-medium">{complaint?.categoryName || 'Uncategorized'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-500">Category</label>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.categoryName || 'Uncategorized'}</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-500">Subcategory</label>
-                    <p className="text-gray-900 font-medium">{complaint?.subCategoryName || 'Not specified'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-500">Subcategory</label>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.subCategoryName || 'Not specified'}</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-500">Issue Type</label>
-                    <p className="text-gray-900 font-medium">{complaint?.issueOptionName || 'General'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-500">Issue Type</label>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.issueOptionName || 'General'}</p>
                   </div>
                 </div>
               </div>
@@ -370,15 +404,16 @@ export default function TicketDetailPage() {
 
             {/* Attachments - Mobile Optimized */}
             {attachments && attachments.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <Paperclip className="h-5 w-5 text-gray-500" />
-                    Attachments ({attachments.length})
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+                <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gray-50">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Paperclip className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+                    <span className="hidden sm:inline">Attachments ({attachments.length})</span>
+                    <span className="sm:hidden">Files ({attachments.length})</span>
                   </h3>
                 </div>
-                <div className="p-4 sm:p-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="p-3 sm:p-4 lg:p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                     {attachments.map((attachment: { url: string }, index: number) => {
                       const url = attachment.url;
                       const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
@@ -387,7 +422,7 @@ export default function TicketDetailPage() {
                       return (
                         <div
                           key={index}
-                          className="group relative rounded-lg border border-gray-200 overflow-hidden bg-gray-50 hover:shadow-md transition-all duration-200"
+                          className="group relative rounded-md sm:rounded-lg border border-gray-200 overflow-hidden bg-gray-50 hover:shadow-md transition-all duration-200 touch-manipulation"
                           onClick={() => isImage && handleImageClick(url)}
                         >
                           {isImage ? (
@@ -395,11 +430,11 @@ export default function TicketDetailPage() {
                               <img
                                 src={url}
                                 alt={`Attachment ${index + 1}`}
-                                className="w-full h-24 sm:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
+                                className="w-full h-20 sm:h-24 lg:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
                               />
                             </div>
                           ) : isVideo ? (
-                            <video controls className="w-full h-24 sm:h-32 object-cover">
+                            <video controls className="w-full h-20 sm:h-24 lg:h-32 object-cover">
                               <source src={url} />
                               Your browser does not support the video tag.
                             </video>
@@ -408,9 +443,9 @@ export default function TicketDetailPage() {
                               href={url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex flex-col items-center justify-center h-24 sm:h-32 p-2 hover:bg-gray-100 transition-colors duration-200"
+                              className="flex flex-col items-center justify-center h-20 sm:h-24 lg:h-32 p-2 hover:bg-gray-100 transition-colors duration-200 touch-manipulation"
                             >
-                              <File className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mb-1" />
+                              <File className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-gray-400 mb-1" />
                               <span className="text-xs font-medium text-gray-600 text-center truncate w-full">Document</span>
                             </a>
                           )}
@@ -424,46 +459,47 @@ export default function TicketDetailPage() {
           </div>
 
           {/* Sidebar - Stack on mobile */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
 
             {/* Contact Information */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <User className="h-5 w-5 text-gray-500" />
-                  Contact Details
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+              <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gray-50">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+                  <span className="hidden sm:inline">Contact Details</span>
+                  <span className="sm:hidden">Contact</span>
                 </h3>
               </div>
-              <div className="p-4 sm:p-6 space-y-4">
+              <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-500">Reported By</label>
-                  <p className="text-gray-900 font-medium">{complaint?.employeeName}</p>
+                  <label className="text-xs sm:text-sm font-medium text-gray-500">Reported By</label>
+                  <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.employeeName}</p>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-500">Team</label>
-                  <p className="text-gray-900">{complaint?.categoryName}</p>
+                  <label className="text-xs sm:text-sm font-medium text-gray-500">Team</label>
+                  <p className="text-sm sm:text-base text-gray-900">{complaint?.categoryName}</p>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-500">Submission Method</label>
-                  <p className="text-gray-900 capitalize">{complaint?.submissionPreference}</p>
+                  <label className="text-xs sm:text-sm font-medium text-gray-500">Submission Method</label>
+                  <p className="text-sm sm:text-base text-gray-900 capitalize">{complaint?.submissionPreference}</p>
                 </div>
               </div>
             </div>
 
             {/* Timeline Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-gray-500" />
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+              <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gray-50">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                   Timeline
                 </h3>
               </div>
-              <div className="p-4 sm:p-6 space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900">Created</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">Created</p>
+                    <p className="text-xs sm:text-sm text-gray-500">
                       {complaint?.createdAt
                         ? format(new Date(complaint.createdAt), 'PPp')
                         : 'Not available'}
@@ -485,10 +521,10 @@ export default function TicketDetailPage() {
             </div>
 
             {/* {logs section} */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-gray-500" />
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+              <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gray-50">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                   Logs
                 </h3>
               </div>
@@ -528,19 +564,6 @@ export default function TicketDetailPage() {
             </div>
 
 
-            {/* Quick Actions - Mobile */}
-            {/* <div className="lg:hidden bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-4 py-4 border-b border-gray-100 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-              </div>
-              <div className="p-4 space-y-3">
-                <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
-                  <MessageSquare className="h-4 w-4" />
-                  Add Comment
-                </button>
-              </div>
-            </div> */}
-
             {/* Popup Image Viewer */}
             {selectedImage && (
               <PopupImageViewer
@@ -554,6 +577,7 @@ export default function TicketDetailPage() {
                 open={isMyTeamPopupOpen}
                 setOpen={setIsMyTeamPopupOpen}
                 complaintId={ticketId}
+                mode="initial-assignment"
                 assignedWorkers={
                   complaint?.assignedWorkers
                     ? complaint.assignedWorkers.map((worker: any) => ({
@@ -574,6 +598,7 @@ export default function TicketDetailPage() {
                 open={isAddWorkerPopupOpen}
                 setOpen={setIsAddWorkerPopupOpen}
                 complaintId={ticketId}
+                mode="add-worker"
                 assignedWorkers={
                   complaint?.assignedWorkers
                     ? complaint.assignedWorkers.map((worker: any) => ({

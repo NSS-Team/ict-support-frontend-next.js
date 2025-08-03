@@ -73,6 +73,7 @@ export const complaintsRouter = createTRPCRouter({
             console.log("raw response of complaint info", json);
             const validated = getComplainInfoResponseSchema.parse(json);
             console.log("validated response of complaint info", validated);
+            console.log("workers assigned to this complaint", validated.data?.complaint?.assignedWorkers);
             return validated;
         }),
 
