@@ -1,5 +1,5 @@
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { getComplainsEmpResponseSchema } from "~/types/responseTypes/dashReponseTypes";
+import { getComplainsEmpResponseSchema, getTeamComplaintsResponseSchema } from "~/types/responseTypes/dashReponseTypes";
 
 export const managerDashRouter = createTRPCRouter({
   // Define your procedures here
@@ -13,7 +13,7 @@ export const managerDashRouter = createTRPCRouter({
     });
     const data = await res.json();
     console.log("raw response", data);
-    const validated = getComplainsEmpResponseSchema.parse(data);
+    const validated = getTeamComplaintsResponseSchema.parse(data);
     return validated;
   }),
 

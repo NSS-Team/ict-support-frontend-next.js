@@ -1,24 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Clock, User2, ChevronDown, ChevronUp, ArrowUpRight } from 'lucide-react';
+import { Clock, User2, ChevronDown, ChevronUp, ArrowUpRight, AlertCircle, MessageSquare } from 'lucide-react';
 import '~/styles/globals.css';
 import type { ticket } from '~/types/tickets/ticket';
 import { useRouter } from 'next/navigation';
 import { complaintStatusLabelMap } from '~/lib/complaintStatusLabelMap';
 import { priorityColorMap } from '~/lib/PriorityColorMap';
 import { complaintStatusColorMap } from '~/lib/statusColorMap';
+import { useUser } from '@clerk/nextjs';
 
 interface TicketProps {
   ticket?: ticket;
 }
 
+// ...existing imports...
+
 const ComplaintCard = ({ ticket }: TicketProps) => {
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role || 'guest';
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const readableStatus = ticket?.status ? complaintStatusLabelMap[ticket.status] : 'UNKNOWN';
+
+  // Simplified feedback check - only role and feedbackGiven
+  const shouldShowFeedbackPrompt = () => {
+    return role === 'employee' && ticket?.feedbackGiven === false;
+  };
+
+  const showFeedbackPrompt = shouldShowFeedbackPrompt();
 
   useEffect(() => {
     const checkScreen = () => setIsMobile(window.innerWidth < 768);
@@ -27,21 +39,64 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
     return () => window.removeEventListener('resize', checkScreen);
   }, []);
 
+  const handleFeedbackClick = () => {
+    router.push(`/ticket/${ticket?.id}?feedback=true`);
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 mt-4">
+      {/* Feedback Prompt Banner */}
+      {showFeedbackPrompt && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+              </div>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-800">
+                Ticket has been marked completed by the worker. Review and give feedback
+              </p>
+              <p className="text-xs text-amber-600 mt-1">
+                Your feedback helps us improve our service quality
+              </p>
+            </div>
+            
+            <div className="flex-shrink-0">
+              <button
+                onClick={handleFeedbackClick}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 touch-manipulation"
+              >
+                <MessageSquare className="w-3 h-3" />
+                <span className="hidden sm:inline">Give Feedback</span>
+                <span className="sm:hidden">Feedback</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="p-4 sm:p-6">
         {/* Mobile Layout */}
         <div className="block sm:hidden">
           {/* Top Row - ID and Status */}
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-gray-500">#{ticket?.id}</span>
-            <span className={`text-white text-xs font-medium rounded px-2 py-1 ${
-              complaintStatusColorMap[ticket?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default
-            }`}>
-              {readableStatus}
-            </span>
+            <div className="flex items-center gap-2">
+              {showFeedbackPrompt && (
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+              )}
+              <span className={`text-white text-xs font-medium rounded px-2 py-1 ${
+                complaintStatusColorMap[ticket?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default
+              }`}>
+                {readableStatus}
+              </span>
+            </div>
           </div>
 
+          {/* Rest of mobile layout... */}
           {/* Title Row */}
           <div className="mb-3">
             <div className="flex items-start gap-2 group">
@@ -96,10 +151,6 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
             }`}
           >
             <div className="space-y-3">
-              {/* <div>
-                <dt className="text-xs font-medium text-gray-500 mb-1">Assigned Worker</dt>
-                <dd className="text-sm text-gray-900">{ticket?.assignedWorkerId || 'Not assigned'}</dd>
-              </div> */}
               <div>
                 <dt className="text-xs font-medium text-gray-500 mb-1">Preferred Mode</dt>
                 <dd className="text-sm text-gray-900">{ticket?.submissionPreference || 'Not specified'}</dd>
@@ -123,7 +174,12 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
             <div className="flex items-start gap-4">
               {/* ID and Status */}
               <div className="flex flex-col items-start">
-                <span className="text-sm font-medium text-gray-500 mb-1">#{ticket?.id}</span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-medium text-gray-500">#{ticket?.id}</span>
+                  {showFeedbackPrompt && (
+                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                  )}
+                </div>
                 <span className={`text-white text-xs font-medium rounded px-2 py-1 ${
                   complaintStatusColorMap[ticket?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default
                 }`}>
@@ -165,11 +221,7 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
 
           {/* Details Grid */}
           <div className="border-t border-gray-100 pt-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {/* <div>
-                <dt className="text-sm font-medium text-gray-500 mb-1">Assigned Worker</dt>
-                <dd className="text-sm text-gray-900">{ticket?.assignedWorker || 'Not assigned'}</dd>
-              </div> */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               <div>
                 <dt className="text-sm font-medium text-gray-500 mb-1">Preferred Mode</dt>
                 <dd className="text-sm text-gray-900">{ticket?.submissionPreference || 'Not specified'}</dd>

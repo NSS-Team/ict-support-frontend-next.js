@@ -221,4 +221,66 @@ export const complaintsRouter = createTRPCRouter({
         // console.log("validated response of add worker to assignment", validated);
         return json;
     }),
+
+    // give feedback on a complaint
+    giveFeedback: publicProcedure.input(z.object({
+        complaintId: z.string(),
+        feedback: z.string().min(1, "Feedback is required"),    
+        score: z.number().min(1, "Score must be at least 1").max(5, "Score must be at most 5"),
+    })).mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/feedback`;
+        const res = await fetch(`${BASE_URL}/submitFeedback`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
+            },
+            body: JSON.stringify(input),
+        });
+        const json = await res.json();
+        console.log("raw response of give feedback", json);
+        // const validated = giveFeedbackResponseSchema.parse(json);
+        // console.log("validated response of give feedback", validated);
+        return json;
+    }),
+
+    // close ticket 
+    closeTicket: publicProcedure.input(z.object({
+        complaintId: z.string(),
+    })).mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/closeComplaint`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
+            },
+            body: JSON.stringify(input),
+        });
+        const json = await res.json();
+        console.log("raw response of close ticket", json);
+        // const validated = closeTicketResponseSchema.parse(json);
+        // console.log("validated response of close ticket", validated);
+        return json;
+    }),
+
+    // reopen ticket
+    reopenTicket: publicProcedure.input(z.object({
+    complaintId: z.string(),
+    })).mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/reopenComplaint`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
+            },
+            body: JSON.stringify(input),
+        });
+        const json = await res.json();
+        console.log("raw response of reopen ticket", json);
+        // const validated = reopenTicketResponseSchema.parse(json);
+        // console.log("validated response of reopen ticket", validated);
+        return json;
+    }),
 });

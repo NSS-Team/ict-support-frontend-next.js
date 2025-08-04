@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, User, MapPin, Clock, Paperclip, Settings, Trash2, MoreVertical, Send, UserPlus, Wrench } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, Paperclip, Settings, Trash2, MoreVertical, Send, UserPlus, Wrench, MessageSquare } from 'lucide-react';
 import { api } from '~/trpc/react';
 import { format } from 'date-fns';
 import Loader from '~/app/_components/Loader';
@@ -21,6 +21,7 @@ import LoginRequired from '~/app/_components/unauthorized/loginToContinue';
 import ErrorLoading from '~/app/_components/unauthorized/errorLoading';
 import AssignedWorkersCard from '~/app/ticket/assignedWorkersCard';
 import AttachmentsDisplay from '~/app/ticket/AttachmentsDisplay';
+import FeedbackPopup from '~/app/ticket/feedbackPopup';
 
 export default function TicketDetailPage() {
   const router = useRouter();
@@ -35,6 +36,8 @@ export default function TicketDetailPage() {
   const [isMyTeamPopupOpen, setIsMyTeamPopupOpen] = useState(false);
   // to toggle the popup for forwarding the ticket
   const [isForwardTeamPopupOpen, setIsForwardTeamPopupOpen] = useState(false);
+  // to toggle the popup for feedback
+  const [isFeedbackPopupOpen, setIsFeedbackPopupOpen] = useState(false);
   // to toggle the close ticket modal, this is only for workers
   const [showCloseModal, setShowCloseModal] = useState(false);
   // to toggle the add worker popup
@@ -81,6 +84,35 @@ export default function TicketDetailPage() {
     error: addWorkerError,
   } = api.complaints.addWorkerToAssignment.useMutation();
 
+  // api call to submit feedback
+  const {
+    mutate: submitFeedback,
+    isPending: isSubmittingFeedback,
+    isSuccess: isFeedbackSuccess,
+    isError: isFeedbackError,
+    error: feedbackError,
+  } = api.complaints.giveFeedback.useMutation();
+
+  // api call to close ticket
+  const {
+    mutate: closeTicket,
+    isPending: isClosingTicket,
+    isSuccess: isCloseSuccess,
+    isError: isCloseError,
+    error: closeError,
+  } = api.complaints.closeTicket.useMutation();
+
+  // api call to reopen ticket
+  const {
+    mutate: reopenTicket,
+    isPending: isReopeningTicket,
+    isSuccess: isReopenSuccess,
+    isError: isReopenError,
+    error: reopenError,
+  } = api.complaints.reopenTicket.useMutation();
+
+
+
   useEffect(() => {
     if (isDeleteSuccess) {
       const role = user?.publicMetadata?.role;
@@ -113,6 +145,48 @@ export default function TicketDetailPage() {
       addToast('Failed to add worker to assignment. Please try again.', 'error');
     }
   }, [isAddWorkerSuccess, isAddWorkerError, addWorkerError, router, addToast]);
+
+  // Handle feedback submission success/error
+  useEffect(() => {
+    if (isFeedbackSuccess) {
+      addToast('Thank you for your feedback!', 'success');
+      // Automatically close the ticket after feedback is submitted
+      closeTicket({ complaintId: id });
+    }
+
+    if (isFeedbackError) {
+      console.error('Error submitting feedback:', feedbackError);
+      addToast('Failed to submit feedback. Please try again.', 'error');
+    }
+  }, [isFeedbackSuccess, isFeedbackError, feedbackError, addToast, closeTicket, id]);
+
+  // Handle close ticket success/error
+  useEffect(() => {
+    if (isCloseSuccess) {
+      addToast('Ticket has been closed successfully!', 'success');
+      setIsFeedbackPopupOpen(false);
+      router.refresh();
+    }
+
+    if (isCloseError) {
+      console.error('Error closing ticket:', closeError);
+      addToast('Failed to close ticket. Please try again.', 'error');
+    }
+  }, [isCloseSuccess, isCloseError, closeError, addToast, router, setIsFeedbackPopupOpen]);
+
+  // Handle reopen ticket success/error
+  useEffect(() => {
+    if (isReopenSuccess) {
+      addToast('Ticket has been reopened successfully!', 'success');
+      setIsFeedbackPopupOpen(false);
+      router.refresh();
+    }
+
+    if (isReopenError) {
+      console.error('Error reopening ticket:', reopenError);
+      addToast('Failed to reopen ticket. Please try again.', 'error');
+    }
+  }, [isReopenSuccess, isReopenError, reopenError, addToast, router, setIsFeedbackPopupOpen]);
 
 
   if (isLoading || !isLoaded) {
@@ -154,6 +228,29 @@ export default function TicketDetailPage() {
     deleteComplaint({ complaintId });
     console.log('deleting complaint with id:', complaintId);
   }
+
+  // Feedback handlers
+  const handleFeedbackSubmit = (feedbackData: any) => {
+    console.log('Feedback submitted:', feedbackData);
+    
+    if (feedbackData.action === 'close') {
+      // Submit feedback with rating and comment
+      submitFeedback({
+        complaintId: id,
+        feedback: feedbackData.comment || 'No additional comments',
+        score: feedbackData.rating
+      });
+    } else if (feedbackData.action === 'reopen') {
+      // Reopen the ticket without feedback
+      reopenTicket({ complaintId: id });
+    }
+  };
+
+  const handleReopenTicket = () => {
+    // Handle ticket reopening logic
+    console.log('Reopening ticket...');
+    reopenTicket({ complaintId: id });
+  };
 
 
   const handleImageClick = (url: string) => {
@@ -202,8 +299,8 @@ export default function TicketDetailPage() {
                   Resolve
                 </button>
               )}
-              
-              {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
+
+              {(complaint?.status === "waiting_assignment" || complaint?.status === "reopened") && user?.publicMetadata?.role === 'manager' && (
                 <button className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
                   onClick={() => { setIsMyTeamPopupOpen(true); console.log('Assigning ticket...'); }}
                 >
@@ -225,15 +322,26 @@ export default function TicketDetailPage() {
                   Add Worker
                 </button>
               )}
-              {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
+              {(complaint?.status === "waiting_assignment" || complaint?.status === "reopened") && user?.publicMetadata?.role === 'manager' && (
                 <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => { setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...');}}>
                   <Send className="h-4 w-4 mr-2" />
                   Forward Complaint
                 </button>
               )}
 
+              {/* Feedback Button - Show for employees when ticket is resolved/closed */}
+              {(complaint?.status === 'resolved') && user?.publicMetadata?.role === 'employee' && (
+                <button 
+                  className="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                  onClick={() => setIsFeedbackPopupOpen(true)}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Give Feedback
+                </button>
+              )}
+
               <div className="flex items-center">
-                {user?.publicMetadata?.role === 'employee' && complaint?.status === "waiting_assignment" && (
+                {user?.publicMetadata?.role === 'employee' && (complaint?.status === "waiting_assignment" || complaint?.status === "reopened") && (
                   <button className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDeleteComplaint(id)}>
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -274,7 +382,7 @@ export default function TicketDetailPage() {
             )}
 
             {/* Assign Button for Managers */}
-            {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
+            {(complaint?.status === "waiting_assignment" || complaint?.status === "reopened") && user?.publicMetadata?.role === 'manager' && (
               <button 
                 className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
                 onClick={() => { setIsMyTeamPopupOpen(true); console.log('Assigning ticket...'); }}
@@ -301,7 +409,7 @@ export default function TicketDetailPage() {
             )}
 
             {/* Forward Complaint Button for Managers */}
-            {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
+            {(complaint?.status === "waiting_assignment" || complaint?.status === "reopened") && user?.publicMetadata?.role === 'manager' && (
               <button 
                 className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
                 onClick={() => { setIsForwardTeamPopupOpen(true); console.log('Forwarding ticket...'); }}
@@ -311,8 +419,19 @@ export default function TicketDetailPage() {
               </button>
             )}
 
+            {/* Feedback Button for Employees - Show when ticket is resolved/closed */}
+            {(complaint?.status === 'resolved') && user?.publicMetadata?.role === 'employee' && (
+              <button 
+                className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
+                onClick={() => setIsFeedbackPopupOpen(true)}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Feedback
+              </button>
+            )}
+
             {/* Delete Button for Employees */}
-            {user?.publicMetadata?.role === 'employee' && complaint?.status === "waiting_assignment" && (
+            {user?.publicMetadata?.role === 'employee' && (complaint?.status === "waiting_assignment" || complaint?.status === "reopened") && (
               <button 
                 className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"
                 onClick={() => handleDeleteComplaint(id)}
@@ -320,6 +439,7 @@ export default function TicketDetailPage() {
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
+
           </div>
         </div>
       </header>
@@ -607,6 +727,17 @@ export default function TicketDetailPage() {
               open={showCloseModal}
               setOpen={setShowCloseModal}
               ticketId={id}
+            />
+
+            {/* Feedback Popup */}
+            <FeedbackPopup
+              isOpen={isFeedbackPopupOpen}
+              onClose={() => setIsFeedbackPopupOpen(false)}
+              ticketId={complaint?.id || id}
+              ticketTitle={complaint?.title || 'Support Request'}
+              onSubmitFeedback={handleFeedbackSubmit}
+              onReopenTicket={handleReopenTicket}
+              isSubmitting={isSubmittingFeedback || isClosingTicket || isReopeningTicket}
             />
 
           </div>

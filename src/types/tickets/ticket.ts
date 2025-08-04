@@ -16,10 +16,15 @@ export const ticketSchema = z.object({
   categoryName: z.string(),
   subCategoryName: z.string(),
   
+  
 });
 
 export const workerTicketSchema = ticketSchema.extend({
   currentWorkerStatus: workerComplaintStatusEnum,
+});
+
+export const EmployeeTicketSchema = ticketSchema.extend({
+  feedbackGiven: z.boolean(),
 });
 
 export default ticketSchema;

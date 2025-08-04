@@ -23,6 +23,8 @@ export const ticketDetailsSchema = ticketSchema.extend({
     })),
     currentWorkerStatus: workerComplaintStatusEnum.optional().nullable(),
   }).optional(),
+  feedbackGiven: z.boolean().default(false),
+  resolvedAt: z.string().optional().nullable(),
 
 });
 
