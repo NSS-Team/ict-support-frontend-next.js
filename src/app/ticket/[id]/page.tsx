@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, User, MapPin, Clock, Paperclip, Settings, Trash2, MoreVertical, Send, UserPlus } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, Paperclip, Settings, Trash2, MoreVertical, Send, UserPlus, Wrench } from 'lucide-react';
 import { api } from '~/trpc/react';
 import { format } from 'date-fns';
 import Loader from '~/app/_components/Loader';
@@ -46,8 +46,12 @@ export default function TicketDetailPage() {
   // api to fetch the ticket details
   const { data: ticket, isLoading, error } = api.complaints.getComplainInfo.useQuery({ id });
   const complaint = ticket?.data?.complaint;
-  const attachments = ticket?.data?.attachments || [];
-  console.log("attachments:", attachments)
+  const formattedAttachments = ticket?.data?.formattedAttachments as any || {};
+  const employeeAttachments = formattedAttachments?.employeeAttachments || [];
+  const workerAttachments = formattedAttachments?.workerAttachments || [];
+  console.log("formattedAttachments:", formattedAttachments)
+  console.log("employeeAttachments:", employeeAttachments)
+  console.log("workerAttachments:", workerAttachments)
   const workers = ticket?.data?.complaint?.assignedWorkers || [];
 
   // api to fetch the complaint logs
@@ -404,52 +408,159 @@ export default function TicketDetailPage() {
               </div>
             </div>
 
-            {/* Attachments - Mobile Optimized */}
-            {attachments && attachments.length > 0 && (
+            {/* Employee Attachments - Mobile Optimized */}
+            {employeeAttachments && employeeAttachments.length > 0 && (
               <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
-                <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gray-50">
+                <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-blue-50">
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <Paperclip className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
-                    <span className="hidden sm:inline">Attachments ({attachments.length})</span>
-                    <span className="sm:hidden">Files ({attachments.length})</span>
+                    <User className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                    <span className="hidden sm:inline">Employee Attachments ({employeeAttachments.length})</span>
+                    <span className="sm:hidden">Employee Files ({employeeAttachments.length})</span>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                      Initial Report
+                    </span>
                   </h3>
                 </div>
                 <div className="p-3 sm:p-4 lg:p-6">
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-                    {attachments.map((attachment: { url: string }, index: number) => {
+                    {employeeAttachments.map((attachment: any, index: number) => {
                       const url = attachment.url;
                       const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
                       const isVideo = url.match(/\.(mp4|webm|ogg)$/i);
 
                       return (
                         <div
-                          key={index}
-                          className="group relative rounded-md sm:rounded-lg border border-gray-200 overflow-hidden bg-gray-50 hover:shadow-md transition-all duration-200 touch-manipulation"
+                          key={`employee-${index}`}
+                          className="group relative rounded-md sm:rounded-lg border border-blue-200 overflow-hidden bg-blue-50 hover:shadow-md transition-all duration-200 touch-manipulation"
                           onClick={() => isImage && handleImageClick(url)}
                         >
                           {isImage ? (
                             <div className="relative">
                               <img
                                 src={url}
-                                alt={`Attachment ${index + 1}`}
+                                alt={`Employee Attachment ${index + 1}`}
                                 className="w-full h-20 sm:h-24 lg:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
                               />
+                              <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                E
+                              </div>
+                              {attachment.note && (
+                                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
+                                  {attachment.note}
+                                </div>
+                              )}
                             </div>
                           ) : isVideo ? (
-                            <video controls className="w-full h-20 sm:h-24 lg:h-32 object-cover">
-                              <source src={url} />
-                              Your browser does not support the video tag.
-                            </video>
+                            <div className="relative">
+                              <video controls className="w-full h-20 sm:h-24 lg:h-32 object-cover">
+                                <source src={url} />
+                                Your browser does not support the video tag.
+                              </video>
+                              <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                E
+                              </div>
+                            </div>
                           ) : (
                             <a
                               href={url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex flex-col items-center justify-center h-20 sm:h-24 lg:h-32 p-2 hover:bg-gray-100 transition-colors duration-200 touch-manipulation"
+                              className="flex flex-col items-center justify-center h-20 sm:h-24 lg:h-32 p-2 hover:bg-blue-100 transition-colors duration-200 touch-manipulation relative"
                             >
-                              <File className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-gray-400 mb-1" />
-                              <span className="text-xs font-medium text-gray-600 text-center truncate w-full">Document</span>
+                              <File className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-500 mb-1" />
+                              <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                E
+                              </div>
+                              <span className="text-xs font-medium text-blue-600 text-center truncate w-full">Document</span>
                             </a>
+                          )}
+                          {attachment.uploaderName && (
+                            <div className="px-2 py-1 bg-blue-50 border-t border-blue-200">
+                              <p className="text-xs text-blue-700 font-medium truncate">
+                                {attachment.uploaderName}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Worker Attachments - Mobile Optimized */}
+            {workerAttachments && workerAttachments.length > 0 && (
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+                <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-green-50">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                    <span className="hidden sm:inline">Worker Attachments ({workerAttachments.length})</span>
+                    <span className="sm:hidden">Worker Files ({workerAttachments.length})</span>
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                      Resolution
+                    </span>
+                  </h3>
+                </div>
+                <div className="p-3 sm:p-4 lg:p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+                    {workerAttachments.map((attachment: any, index: number) => {
+                      const url = attachment.url;
+                      const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+                      const isVideo = url.match(/\.(mp4|webm|ogg)$/i);
+
+                      return (
+                        <div
+                          key={`worker-${index}`}
+                          className="group relative rounded-md sm:rounded-lg border border-green-200 overflow-hidden bg-green-50 hover:shadow-md transition-all duration-200 touch-manipulation"
+                          onClick={() => isImage && handleImageClick(url)}
+                        >
+                          {isImage ? (
+                            <div className="relative">
+                              <img
+                                src={url}
+                                alt={`Worker Attachment ${index + 1}`}
+                                className="w-full h-20 sm:h-24 lg:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                              <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                W
+                              </div>
+                              {attachment.note && (
+                                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
+                                  {attachment.note}
+                                </div>
+                              )}
+                            </div>
+                          ) : isVideo ? (
+                            <div className="relative">
+                              <video controls className="w-full h-20 sm:h-24 lg:h-32 object-cover">
+                                <source src={url} />
+                                Your browser does not support the video tag.
+                              </video>
+                              <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                W
+                              </div>
+                            </div>
+                          ) : (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex flex-col items-center justify-center h-20 sm:h-24 lg:h-32 p-2 hover:bg-green-100 transition-colors duration-200 touch-manipulation relative"
+                            >
+                              <File className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-green-500 mb-1" />
+                              <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                W
+                              </div>
+                              <span className="text-xs font-medium text-green-600 text-center truncate w-full">Document</span>
+                            </a>
+                          )}
+                          {attachment.uploaderName && (
+                            <div className="px-2 py-1 bg-green-50 border-t border-green-200">
+                              <p className="text-xs text-green-700 font-medium truncate">
+                                {attachment.uploaderName}
+                              </p>
+                            </div>
                           )}
                         </div>
                       );

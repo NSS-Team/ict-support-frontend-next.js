@@ -7,7 +7,10 @@ import { responseSchema } from "~/lib/responseSchema";
 // Schema for the data object of the response of 'getComplainInfo' containing ticket details and attachments
 export const getComplainInfoDataObjectSchema = z.object({
     complaint: ticketDetailsSchema,
-    attachments: attachmentSchema.array(),
+    formattedAttachments: z.object({
+        employeeAttachments: z.array(attachmentSchema),
+        workerAttachments: z.array(attachmentSchema),
+    }),
 });
 
 // Schema for the response of 'getComplainInfo' API
