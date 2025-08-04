@@ -444,6 +444,8 @@ export default function TicketDetailPage() {
         </div>
       </header>
 
+      {/* this is a random comment */}
+
       <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-32 overflow-hidden">
         {/* Priority Banner - Mobile Optimized */}
         <div className="mb-4 sm:mb-6">
