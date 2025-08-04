@@ -41,7 +41,7 @@ export default function RootLayout({
             <Navbar />
             <div className="flex min-h-screen">
               <Sidebar />
-              <main className="mt-16 flex-1">
+              <main className="mt-16 flex-1 overflow-x-hidden ">
                 <div className='md:ml-16'>
                 {children}
                 </div>

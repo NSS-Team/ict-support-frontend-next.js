@@ -20,6 +20,7 @@ import MarkCompleteTicketPopup from '~/app/ticket/MarkCompleteTicketPopup';
 import LoginRequired from '~/app/_components/unauthorized/loginToContinue';
 import ErrorLoading from '~/app/_components/unauthorized/errorLoading';
 import AssignedWorkersCard from '~/app/ticket/assignedWorkersCard';
+import AttachmentsDisplay from '~/app/ticket/AttachmentsDisplay';
 
 export default function TicketDetailPage() {
   const router = useRouter();
@@ -52,7 +53,8 @@ export default function TicketDetailPage() {
   console.log("formattedAttachments:", formattedAttachments)
   console.log("employeeAttachments:", employeeAttachments)
   console.log("workerAttachments:", workerAttachments)
-  const workers = ticket?.data?.complaint?.assignedWorkers || [];
+  const workers = ticket?.data?.complaint?.assignedWorkers?.workers || [];
+  const currentWorkerStatus = ticket?.data?.complaint?.assignedWorkers?.currentWorkerStatus;
 
   // api to fetch the complaint logs
   const { data: getComplaintLogsResponse, refetch: refetchLogs, isLoading: isLogsLoading } = api.complaints.getComplaintLogs.useQuery({ complaintId: id });
@@ -182,12 +184,25 @@ export default function TicketDetailPage() {
 
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center space-x-3">
-              {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && complaint?.status !== 'resolved' && (
+              {/* Mark Complete Button - Show when currentWorkerStatus is not "resolved" */}
+              {currentWorkerStatus !== "resolved" && user?.publicMetadata?.role === 'worker' && (
+                <button 
+                  className="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                  onClick={() => setShowCloseModal(true)}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  Mark Complete
+                </button>
+              )}
+              
+              {/* Resolve Button for Workers */}
+              {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && complaint?.status !== 'resolved' && currentWorkerStatus !== "in_queue" && (
                 <button className="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => setShowCloseModal(true)}>
                   <Clock className="h-4 w-4 mr-2" />
                   Resolve
                 </button>
               )}
+              
               {complaint?.status === "waiting_assignment" && user?.publicMetadata?.role === 'manager' && (
                 <button className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
                   onClick={() => { setIsMyTeamPopupOpen(true); console.log('Assigning ticket...'); }}
@@ -196,8 +211,8 @@ export default function TicketDetailPage() {
                   Assign
                 </button>
               )}
-              {(complaint?.status === "in_progress" || complaint?.status === "assigned") || complaint?.status === "in_queue" && user?.publicMetadata?.role === 'manager' && (
-                <button 
+              {(complaint?.status === "in_progress" || complaint?.status === "assigned" || complaint?.status === "in_queue") && (user?.publicMetadata?.role === 'manager') && (
+                <button
                   className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => { setIsAddWorkerPopupOpen(true); console.log('Adding worker to assignment...'); }}
                   disabled={isAddingWorker}
@@ -236,14 +251,25 @@ export default function TicketDetailPage() {
         {/* Mobile Action Bar */}
         <div className="lg:hidden px-4 py-3 bg-gray-50 border-t border-gray-200 w-full">
           <div className="flex space-x-2 max-w-full overflow-x-auto">
-            {/* Close Ticket Button for Workers */}
-            {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && complaint?.status !== 'resolved' && (
+            {/* Mark Complete Button for Workers - Show when currentWorkerStatus is "in_queue" */}
+            {currentWorkerStatus === "in_queue" && user?.publicMetadata?.role === 'worker' && (
               <button 
                 className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
                 onClick={() => setShowCloseModal(true)}
               >
                 <Clock className="h-4 w-4 mr-2" />
-                Resolve
+                Mark Complete
+              </button>
+            )}
+
+            {/* Mark Complete Button for Workers */}
+            {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && complaint?.status !== 'resolved' && currentWorkerStatus !== "in_queue" && (
+              <button 
+                className="flex-shrink-0 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
+                onClick={() => setShowCloseModal(true)}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Mark Complete
               </button>
             )}
 
@@ -349,13 +375,13 @@ export default function TicketDetailPage() {
               {/* assignedWorkersCard component */}
               <AssignedWorkersCard 
                 assignedWorkers={
-                  complaint?.assignedWorkers
-                    ? complaint.assignedWorkers.map((worker: any) => ({
+                  workers && workers.length > 0
+                    ? workers.map((worker: any) => ({
                         workerId: worker.workerId,
                         workerUserId: worker.workerUserId ?? '',
                         teamId: worker.teamId ?? 0,
-                        workerName: worker.workerName ?? worker.name ?? 'Unknown',
-                        status: worker.workerStatus ?? 'none',
+                        workerName: worker.workerName ?? 'Unknown',
+                        status: worker.workerStatus ?? 'active',
                         picUrl: worker.workerPic || '', // optional URL for worker's profile picture
                       }))
                     : undefined
@@ -408,167 +434,12 @@ export default function TicketDetailPage() {
               </div>
             </div>
 
-            {/* Employee Attachments - Mobile Optimized */}
-            {employeeAttachments && employeeAttachments.length > 0 && (
-              <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
-                <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-blue-50">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <User className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                    <span className="hidden sm:inline">Employee Attachments ({employeeAttachments.length})</span>
-                    <span className="sm:hidden">Employee Files ({employeeAttachments.length})</span>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                      Initial Report
-                    </span>
-                  </h3>
-                </div>
-                <div className="p-3 sm:p-4 lg:p-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-                    {employeeAttachments.map((attachment: any, index: number) => {
-                      const url = attachment.url;
-                      const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-                      const isVideo = url.match(/\.(mp4|webm|ogg)$/i);
-
-                      return (
-                        <div
-                          key={`employee-${index}`}
-                          className="group relative rounded-md sm:rounded-lg border border-blue-200 overflow-hidden bg-blue-50 hover:shadow-md transition-all duration-200 touch-manipulation"
-                          onClick={() => isImage && handleImageClick(url)}
-                        >
-                          {isImage ? (
-                            <div className="relative">
-                              <img
-                                src={url}
-                                alt={`Employee Attachment ${index + 1}`}
-                                className="w-full h-20 sm:h-24 lg:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
-                              />
-                              <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                                E
-                              </div>
-                              {attachment.note && (
-                                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
-                                  {attachment.note}
-                                </div>
-                              )}
-                            </div>
-                          ) : isVideo ? (
-                            <div className="relative">
-                              <video controls className="w-full h-20 sm:h-24 lg:h-32 object-cover">
-                                <source src={url} />
-                                Your browser does not support the video tag.
-                              </video>
-                              <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                                E
-                              </div>
-                            </div>
-                          ) : (
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex flex-col items-center justify-center h-20 sm:h-24 lg:h-32 p-2 hover:bg-blue-100 transition-colors duration-200 touch-manipulation relative"
-                            >
-                              <File className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-500 mb-1" />
-                              <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                                E
-                              </div>
-                              <span className="text-xs font-medium text-blue-600 text-center truncate w-full">Document</span>
-                            </a>
-                          )}
-                          {attachment.uploaderName && (
-                            <div className="px-2 py-1 bg-blue-50 border-t border-blue-200">
-                              <p className="text-xs text-blue-700 font-medium truncate">
-                                {attachment.uploaderName}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Worker Attachments - Mobile Optimized */}
-            {workerAttachments && workerAttachments.length > 0 && (
-              <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
-                <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-100 bg-green-50">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                    <span className="hidden sm:inline">Worker Attachments ({workerAttachments.length})</span>
-                    <span className="sm:hidden">Worker Files ({workerAttachments.length})</span>
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                      Resolution
-                    </span>
-                  </h3>
-                </div>
-                <div className="p-3 sm:p-4 lg:p-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-                    {workerAttachments.map((attachment: any, index: number) => {
-                      const url = attachment.url;
-                      const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-                      const isVideo = url.match(/\.(mp4|webm|ogg)$/i);
-
-                      return (
-                        <div
-                          key={`worker-${index}`}
-                          className="group relative rounded-md sm:rounded-lg border border-green-200 overflow-hidden bg-green-50 hover:shadow-md transition-all duration-200 touch-manipulation"
-                          onClick={() => isImage && handleImageClick(url)}
-                        >
-                          {isImage ? (
-                            <div className="relative">
-                              <img
-                                src={url}
-                                alt={`Worker Attachment ${index + 1}`}
-                                className="w-full h-20 sm:h-24 lg:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
-                              />
-                              <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                                W
-                              </div>
-                              {attachment.note && (
-                                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
-                                  {attachment.note}
-                                </div>
-                              )}
-                            </div>
-                          ) : isVideo ? (
-                            <div className="relative">
-                              <video controls className="w-full h-20 sm:h-24 lg:h-32 object-cover">
-                                <source src={url} />
-                                Your browser does not support the video tag.
-                              </video>
-                              <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                                W
-                              </div>
-                            </div>
-                          ) : (
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex flex-col items-center justify-center h-20 sm:h-24 lg:h-32 p-2 hover:bg-green-100 transition-colors duration-200 touch-manipulation relative"
-                            >
-                              <File className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-green-500 mb-1" />
-                              <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                                W
-                              </div>
-                              <span className="text-xs font-medium text-green-600 text-center truncate w-full">Document</span>
-                            </a>
-                          )}
-                          {attachment.uploaderName && (
-                            <div className="px-2 py-1 bg-green-50 border-t border-green-200">
-                              <p className="text-xs text-green-700 font-medium truncate">
-                                {attachment.uploaderName}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Attachments Display Component */}
+            <AttachmentsDisplay
+              employeeAttachments={employeeAttachments}
+              workerAttachments={workerAttachments}
+              onImageClick={handleImageClick}
+            />
           </div>
 
           {/* Sidebar - Stack on mobile */}
@@ -693,7 +564,7 @@ export default function TicketDetailPage() {
                 mode="initial-assignment"
                 assignedWorkers={
                   complaint?.assignedWorkers
-                    ? complaint.assignedWorkers.map((worker: any) => ({
+                    ? complaint.assignedWorkers.workers.map((worker: any) => ({
                       workerId: worker.workerId,
                       workerUserId: worker.workerUserId ?? '',
                       teamId: worker.teamId ?? 0,
@@ -714,7 +585,7 @@ export default function TicketDetailPage() {
                 mode="add-worker"
                 assignedWorkers={
                   complaint?.assignedWorkers
-                    ? complaint.assignedWorkers.map((worker: any) => ({
+                    ? complaint.assignedWorkers.workers.map((worker: any) => ({
                       workerId: worker.workerId,
                       workerUserId: worker.workerUserId ?? '',
                       teamId: worker.teamId ?? 0,

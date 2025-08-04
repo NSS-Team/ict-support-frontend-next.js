@@ -12,17 +12,14 @@ export const ticketSchema = z.object({
   submissionPreference: submissionPreferenceEnum,
   status: complaintStatusEnum,
   priority: priorityEnum,
-  
   createdAt: z.string(),
   categoryName: z.string(),
   subCategoryName: z.string(),
-  // issueOptionId: z.number(),
-  // customDescription: z.string().optional().nullable(),
-  // device: z.string().optional().nullable(),
-  // issueOptionName: z.string(),
-  // escalationLevel: z.number().min(0).max(3).optional().nullable(),
-  // teamId: z.number().min(1),
   
+});
+
+export const workerTicketSchema = ticketSchema.extend({
+  currentWorkerStatus: workerComplaintStatusEnum,
 });
 
 export default ticketSchema;
