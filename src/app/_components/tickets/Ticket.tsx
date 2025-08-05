@@ -13,7 +13,7 @@ import type { employeeticket } from '~/types/tickets/ticket';
 import { api } from '~/trpc/react';
 
 interface TicketProps {
-  ticket?: employeeticket;
+  ticket?: ticket;
 }
 
 const ComplaintCard = ({ ticket }: TicketProps) => {

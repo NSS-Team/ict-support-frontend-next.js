@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, Calendar, Users, Mail, Building, UserCheck, UserX, Eye, Clock, Grid, List, X, Shield, Wrench, Filter, ChevronDown } from 'lucide-react';
+import { Search, Calendar, Users, Mail, Building, Eye, Clock, Grid, List, X, Shield, Wrench, Filter } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { api } from '~/trpc/react';
 import Loader from "~/app/_components/Loader";
@@ -47,13 +47,19 @@ export default function NewRegistrationsPage() {
 
     // API calls
     const { data: pendingUsersResponse, isLoading: isLoadingPending, refetch } = api.adminDash.getUnapprovedRegistrations.useQuery();
-    const pendingUsers: PendingUser[] = pendingUsersResponse?.data?.unapprovedUsers || [];
+    
+        // Memoize pendingUsers to prevent dependency changes
+    const pendingUsers: PendingUser[] = useMemo(() => {
+        return pendingUsersResponse?.data?.unapprovedUsers ?? [];
+    }, [pendingUsersResponse?.data?.unapprovedUsers]);
 
     // API mutations
     const approveMutation = api.adminDash.approveUser.useMutation({
         onSuccess: () => {
             addToast("User approved successfully", "success");
-            refetch();
+            void refetch().catch((error) => {
+                console.error('Error refetching data after approval:', error);
+            });
             closeModal();
         },
         onError: (error) => {
@@ -65,7 +71,9 @@ export default function NewRegistrationsPage() {
     const rejectMutation = api.adminDash.rejectUser.useMutation({
         onSuccess: () => {
             addToast("User rejected successfully", "success");
-            refetch();
+            void refetch().catch((error) => {
+                console.error('Error refetching data after rejection:', error);
+            });
             closeModal();
         },
         onError: (error) => {
@@ -79,7 +87,7 @@ export default function NewRegistrationsPage() {
             return [];
         }
         
-        let filtered = pendingUsers.filter((user: PendingUser) => {
+        const filtered = pendingUsers.filter((user: PendingUser) => {
             const matchesSearch = user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -219,7 +227,7 @@ export default function NewRegistrationsPage() {
     };
 
     // Helper function to check if value exists (handles empty strings and nulls)
-    const hasValue = (value: any): boolean => {
+    const hasValue = (value: string | null | undefined): boolean => {
         return value !== null && value !== undefined && value !== '';
     };
 
@@ -264,7 +272,7 @@ export default function NewRegistrationsPage() {
     return (
         <div className="min-h-screen bg-gray-50 pb-20 md:pb-8">
             {/* Mobile-First Header */}
-            <div className="bg-white border-b border-gray-200 sticky top-16 z-30">
+            <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
                 <div className="px-3 sm:px-4 lg:px-6 py-3">
                     {/* Mobile Title Row */}
                     <div className="flex items-center justify-between mb-3">
@@ -617,7 +625,7 @@ export default function NewRegistrationsPage() {
                                 )}
                                 {searchTerm && (
                                     <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded truncate max-w-24">
-                                        "{searchTerm}"
+                                        &ldquo;{searchTerm}&rdquo;
                                     </span>
                                 )}
                             </div>

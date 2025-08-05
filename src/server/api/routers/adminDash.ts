@@ -1,6 +1,7 @@
 
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { z } from "zod";
+import { unapprovedRegistrationsResponseSchema } from "~/types/responseTypes/adminDashResponses/adminDashResponses";
 
 export const adminDashRouter = createTRPCRouter({
     // Add your admin dashboard related procedures here
@@ -17,7 +18,12 @@ export const adminDashRouter = createTRPCRouter({
         const json = await res.json();
         console.log("raw response", json);
         console.log("unapproved registrations", json.data.unapprovedUsers);
-        return json;
+        const validated = unapprovedRegistrationsResponseSchema.parse(json);
+        // if (!validated?.data?.success) {
+        //     console.error("Validation error", validated.error);
+        //     throw new Error("Invalid response from API");
+        // }
+        return validated;
     }),
 
     // approve the user 

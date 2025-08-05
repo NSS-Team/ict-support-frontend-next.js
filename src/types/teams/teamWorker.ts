@@ -7,6 +7,7 @@ export const teamWorkerSchema = z.object({
   teamId: z.number(),
   workerName: z.string(),
   status: teamWorkerStatusEnum,
+  points: z.number().optional(),
 });
 
 export type TeamWorker = z.infer<typeof teamWorkerSchema>;

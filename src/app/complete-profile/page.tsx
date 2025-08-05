@@ -169,7 +169,7 @@ const UserProfileForm = () => {
             </div>
             <h1 className="text-3xl font-semibold text-gray-900 mb-4">Welcome to NUST Portal!</h1>
             <p className="text-gray-600 text-lg mb-6">
-              Your profile has been approved and you're all set to use the platform.
+              Your profile has been approved and you&apos;re all set to use the platform.
             </p>
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium">
               <CheckCircle className="w-4 h-4" />

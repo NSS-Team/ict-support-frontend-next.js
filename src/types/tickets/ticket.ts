@@ -15,8 +15,8 @@ export const ticketSchema = z.object({
   createdAt: z.string(),
   categoryName: z.string(),
   subCategoryName: z.string(),
-  
-  
+  feedbackGiven: z.boolean().optional().nullable(),
+
 });
 
 export const workerTicketSchema = ticketSchema.extend({

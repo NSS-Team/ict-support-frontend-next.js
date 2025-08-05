@@ -11,7 +11,7 @@ import { useState, useMemo } from "react";
 import { useUser } from '@clerk/nextjs';
 
 interface TicketsOnDashProps {
-    tickets?: employeeticket[]; 
+    tickets?: ticket[]; 
     isLoading?: boolean;
 }
 
