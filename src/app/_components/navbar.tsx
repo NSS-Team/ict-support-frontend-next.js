@@ -43,44 +43,39 @@ const Navbar = () => {
   const { mutate: markNotificationAsRead } = api.notifications.markNotificationAsRead.useMutation();
   const { mutate: markAllNotificationsAsRead } = api.notifications.markAllNotificationsAsRead.useMutation();
 
-  // Scroll lock effect - Prevent background scrolling when popup is open
+  // Scroll lock effect - Only apply on mobile
   useEffect(() => {
-    if (isNotificationOpen) {
-      // Disable scroll on body
+    const isMobile = window.innerWidth < 640; // sm breakpoint
+    
+    if (isNotificationOpen && isMobile) {
+      // Disable scroll on body for mobile only
+      const scrollY = window.scrollY;
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
-      document.body.style.top = `-${window.scrollY}px`;
-    } else {
-      // Re-enable scroll on body
-      const scrollY = document.body.style.top;
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.top = '';
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-      }
+      document.body.style.top = `-${scrollY}px`;
+      
+      return () => {
+        // Re-enable scroll on body
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+      };
     }
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.top = '';
-    };
   }, [isNotificationOpen]);
 
-  // Touch event handlers for swipe down
+  // Touch event handlers for swipe down (mobile only)
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.innerWidth >= 640) return; // Don't handle on desktop
     setStartY(e.touches[0]!.clientY);
     setCurrentY(e.touches[0]!.clientY);
     setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
+    if (!isDragging || window.innerWidth >= 640) return;
     
     const touch = e.touches[0]!;
     setCurrentY(touch.clientY);
@@ -105,7 +100,7 @@ const Navbar = () => {
   };
 
   const handleTouchEnd = () => {
-    if (!isDragging) return;
+    if (!isDragging || window.innerWidth >= 640) return;
     
     const deltaY = currentY - startY;
     
@@ -116,47 +111,6 @@ const Navbar = () => {
     }
     
     // Close if swiped down enough
-    if (deltaY > dragThreshold) {
-      setIsNotificationOpen(false);
-    }
-    
-    setIsDragging(false);
-    setStartY(0);
-    setCurrentY(0);
-  };
-
-  // Mouse event handlers for desktop drag support (optional)
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setStartY(e.clientY);
-    setCurrentY(e.clientY);
-    setIsDragging(true);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    
-    setCurrentY(e.clientY);
-    const deltaY = e.clientY - startY;
-    
-    if (deltaY > 0) {
-      if (panelRef.current) {
-        const translateY = Math.min(deltaY * 0.5, 200);
-        panelRef.current.style.transform = `translateY(${translateY}px)`;
-        panelRef.current.style.transition = 'none';
-      }
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (!isDragging) return;
-    
-    const deltaY = currentY - startY;
-    
-    if (panelRef.current) {
-      panelRef.current.style.transform = '';
-      panelRef.current.style.transition = '';
-    }
-    
     if (deltaY > dragThreshold) {
       setIsNotificationOpen(false);
     }
@@ -279,42 +233,39 @@ const Navbar = () => {
 
               {isNotificationOpen && (
                 <>
-                  {/* Mobile: Full screen overlay with scroll lock */}
+                  {/* Mobile: Full screen overlay - Only show on mobile */}
                   <div 
                     className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 sm:hidden" 
                     onClick={() => setIsNotificationOpen(false)}
-                    style={{ touchAction: 'none' }} // Prevent scroll on overlay
                   />
                   
-                  {/* Notification Panel - Responsive with Swipe Support */}
+                  {/* Notification Panel - Fixed positioning issues */}
                   <div 
                     ref={panelRef}
                     className={`
                       z-50
                       /* Mobile: Full width bottom sheet */
                       fixed sm:absolute
-                      bottom-0 sm:top-12 
+                      bottom-0 sm:top-full sm:mt-2
                       left-0 sm:left-auto sm:right-0
                       w-full sm:w-96
-                      max-h-[85vh] sm:max-h-[80vh]
-                      bg-white rounded-t-2xl sm:rounded-lg 
+                      max-h-[85vh] sm:max-h-96
+                      bg-white 
+                      rounded-t-2xl sm:rounded-lg 
                       shadow-2xl sm:shadow-lg 
                       border-t sm:border border-gray-200
                       transform transition-transform duration-300 ease-out
-                      translate-y-0 sm:translate-y-0
                       ${isDragging ? '' : 'transition-transform'}
                     `}
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={isDragging ? handleMouseMove : undefined}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    style={{ touchAction: 'pan-y' }} // Allow vertical panning
+                    style={{ 
+                      touchAction: window.innerWidth < 640 ? 'pan-y' : 'auto' // Only allow panning on mobile
+                    }}
                   >
                     
-                    {/* Mobile Handle - Enhanced for swipe feedback */}
+                    {/* Mobile Handle - Only show on mobile */}
                     <div 
                       className="block sm:hidden w-12 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2 cursor-grab active:cursor-grabbing"
                       style={{
@@ -324,9 +275,9 @@ const Navbar = () => {
                     />
                     
                     {/* Header - Mobile Optimized */}
-                    <div className="px-4 sm:px-4 py-3 sm:py-3 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl sm:rounded-t-lg">
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl sm:rounded-t-lg">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-lg sm:text-sm font-semibold text-gray-900">Notifications</h3>
+                        <h3 className="text-lg sm:text-base font-semibold text-gray-900">Notifications</h3>
                         {totalUnread > 0 && (
                           <span className="bg-red-100 text-red-600 text-xs font-medium px-2 py-1 rounded-full">
                             {totalUnread} new
@@ -338,7 +289,7 @@ const Navbar = () => {
                         {unreadCount > 0 && (
                           <button
                             onClick={markAllAsRead}
-                            className="text-xs sm:text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1 hover:bg-blue-50 rounded-lg transition-colors"
                           >
                             <span className="hidden sm:inline">Mark all as read</span>
                             <span className="sm:hidden">Mark all</span>
@@ -355,12 +306,11 @@ const Navbar = () => {
                       </div>
                     </div>
 
-                    {/* List - Mobile Optimized with Scroll Control */}
+                    {/* List - Fixed height issues */}
                     <div 
-                      className="overflow-y-auto flex-1" 
+                      className="overflow-y-auto" 
                       style={{ 
-                        maxHeight: 'calc(85vh - 120px)',
-                        overscrollBehavior: 'contain' // Prevent overscroll
+                        maxHeight: window.innerWidth < 640 ? 'calc(85vh - 120px)' : '300px',
                       }}
                     >
                       {notifications.length === 0 ? (
@@ -382,7 +332,7 @@ const Navbar = () => {
                               }`}
                             >
                               <div className="flex items-start gap-3">
-                                {/* Mobile: Larger notification dot */}
+                                {/* Notification dot */}
                                 {!notification.read && (
                                   <div className="w-2 h-2 sm:w-1.5 sm:h-1.5 bg-blue-500 rounded-full mt-2 sm:mt-1.5 flex-shrink-0" />
                                 )}
@@ -395,7 +345,7 @@ const Navbar = () => {
                                       }`}>
                                         New Notification
                                       </p>
-                                      <p className="text-sm sm:text-sm text-gray-600 mt-1 leading-5">
+                                      <p className="text-sm text-gray-600 mt-1 leading-5">
                                         {notification.message}
                                       </p>
                                       <p className="text-xs text-gray-400 mt-2 sm:mt-1">
@@ -405,7 +355,7 @@ const Navbar = () => {
                                       </p>
                                     </div>
                                     
-                                    {/* Action Buttons - Mobile Optimized */}
+                                    {/* Action Buttons */}
                                     <div className="flex items-center gap-1 flex-shrink-0">
                                       {notification.status !== 'read' && (
                                         <button
@@ -434,13 +384,13 @@ const Navbar = () => {
                       )}
                     </div>
 
-                    {/* Footer - Mobile Optimized */}
+                    {/* Footer */}
                     {notifications.length > 0 && (
-                      <div className="px-4 py-4 sm:py-3 bg-gray-50 border-t border-gray-100 sticky bottom-0">
+                      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
                         {hasMore ? (
                           <button
                             onClick={() => setNotificationOffset((prev) => prev + 10)}
-                            className="w-full text-sm sm:text-sm text-blue-600 hover:text-blue-800 font-medium py-2 sm:py-1 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                            className="w-full text-sm text-blue-600 hover:text-blue-800 font-medium py-2 sm:py-1 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2"
                           >
                             Load More
                             <ChevronDown className="w-4 h-4" />
