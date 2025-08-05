@@ -112,7 +112,7 @@ export default function MyTeamPage() {
     const performance = getPerformanceLevel(points);
     return {
       className: `px-3 py-1.5 text-sm font-semibold rounded-lg ${performance.bgColor} ${performance.color} ${performance.borderColor} border shadow-sm`,
-      content: `${points} pts`
+      content: `${points} Points`
     };
   };
 
@@ -165,7 +165,7 @@ export default function MyTeamPage() {
 
   // Calculate points statistics
   const pointsStats = workers.reduce((acc, worker) => {
-    const points = worker.points || 0;
+    const points = worker.Points || 0;
     acc.totalPoints += points;
     acc.averagePoints = workers.length > 0 ? Math.round(acc.totalPoints / workers.length) : 0;
     acc.highestPoints = Math.max(acc.highestPoints, points);
@@ -247,7 +247,7 @@ export default function MyTeamPage() {
             ) : (
               <div className="space-y-3">
                 {workers.map(member => {
-                  const points = member.points || 0;
+                  const points = member.Points || 0;
                   const performance = getPerformanceLevel(points);
                   const compactDisplay = getCompactPointsDisplay(points);
                   
@@ -364,7 +364,7 @@ export default function MyTeamPage() {
                                   </div>
                                   <div className="text-right">
                                     <div className="text-3xl font-bold text-gray-900">{points}</div>
-                                    <div className="text-sm text-gray-500">points</div>
+                                    <div className="text-sm text-gray-500">Points</div>
                                   </div>
                                 </div>
 
@@ -382,7 +382,7 @@ export default function MyTeamPage() {
                                 <div className="space-y-2">
                                   <div className="flex justify-between text-sm text-gray-600">
                                     <span>Progress to Next Level</span>
-                                    <span>{points}/100</span>
+                                    <span>{points}/100 Points</span>
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                                     <div 

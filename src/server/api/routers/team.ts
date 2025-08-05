@@ -52,8 +52,10 @@ export const teamsRouter = createTRPCRouter({
             });
             const json = await res.json();
             console.log("raw response", json);
+            console.log("my team workers raw", json.data.workers);
             const validated = getTeamWorkersResponseSchema.parse(json);
             console.log("validated response", validated);
+            console.log("my team workers", validated?.data?.workers);
             return validated;
         }),
 });

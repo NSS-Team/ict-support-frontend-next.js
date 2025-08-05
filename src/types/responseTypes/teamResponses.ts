@@ -2,6 +2,7 @@ import { stat } from "fs";
 import {z} from "zod";
 import { responseSchema } from "~/lib/responseSchema";
 import { teamWorkerStatusEnum } from "../enums";
+import { P } from "node_modules/framer-motion/dist/types.d-Bq-Qm38R";
 
 export const getTeamDataSchema = z.object({
     id: z.string(),
@@ -24,6 +25,7 @@ export const getTeamWorkersDataSchema = z.object({
         teamId: z.number(),
         workerName: z.string(),
         status: teamWorkerStatusEnum,
+        Points: z.number().optional(),
     }).optional()).optional(),
 
     manager: z.object({
