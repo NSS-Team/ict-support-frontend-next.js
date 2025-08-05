@@ -283,4 +283,24 @@ export const complaintsRouter = createTRPCRouter({
         // console.log("validated response of reopen ticket", validated);
         return json;
     }),
+
+    // activate a ticket in queue
+    activateTicketInQueue: publicProcedure.input(z.object({
+        complaintId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complain`;
+        const res = await fetch(`${BASE_URL}/activateComplaint`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ctx.token}`,
+            },
+            body: JSON.stringify(input),
+        });
+        const json = await res.json();
+        console.log("raw response of activate ticket in queue", json);
+        // const validated = activateTicketInQueueResponseSchema.parse(json);
+        // console.log("validated response of activate ticket in queue", validated);
+        return json;
+    }),
 });

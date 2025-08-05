@@ -293,12 +293,12 @@ export default function TicketDetailPage() {
               )}
               
               {/* Resolve Button for Workers */}
-              {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && complaint?.status !== 'resolved' && currentWorkerStatus !== "in_queue" && (
+              {/* {user?.publicMetadata?.role === 'worker' && complaint?.status !== 'closed' && complaint?.status !== 'resolved' && currentWorkerStatus !== "in_queue" && (
                 <button className="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" onClick={() => setShowCloseModal(true)}>
                   <Clock className="h-4 w-4 mr-2" />
                   Resolve
                 </button>
-              )}
+              )} */}
 
               {(complaint?.status === "waiting_assignment" || complaint?.status === "reopened") && user?.publicMetadata?.role === 'manager' && (
                 <button className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
