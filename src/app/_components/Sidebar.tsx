@@ -53,12 +53,12 @@ const Sidebar = () => {
       roles: ['employee', 'worker', 'admin', 'manager'],
     },
     {
-      name: 'Teams',
+      name: 'Users',
       icon: Users,
       color: 'black',
       size: 20,
       onClick: () => {
-        console.log('Teams clicked');
+        router.push('/dashboard/admin/allUsers');
         setIsExpanded(false);
       },
       roles: ['admin'],

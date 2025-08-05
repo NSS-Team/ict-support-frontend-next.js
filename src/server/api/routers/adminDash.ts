@@ -65,6 +65,20 @@ export const adminDashRouter = createTRPCRouter({
 
         }),
 
+        // getAll users 
+    getAllUsers: publicProcedure.query(async ({ ctx }) => {
+        const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/dash`;
+        const res = await fetch(`${BASE_URL}/getAllUsers`, {
+            headers: {
+                Authorization: `Bearer ${ctx.token}`,
+                "Content-Type": "application/json",
+            },
+        });
+        const json = await res.json();
+        console.log("raw response of get all users", json);
+        return json;
+    }),
+
 
 });
 
