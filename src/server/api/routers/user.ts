@@ -1,5 +1,6 @@
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { z } from "zod";
+import { getMyInfoResponseSchema, getUserInfoResponseSchema } from "~/types/responseTypes/userResponses/user";
 import { getAllUsersResponseSchema } from "~/types/user/allUsersSchema";
 
 export const userRouter = createTRPCRouter({
@@ -13,12 +14,12 @@ export const userRouter = createTRPCRouter({
                 "Content-Type": "application/json",
             },
         });
-        const json = await res.json();
-        console.log("raw response of get all users", json);
-        
+        const json = await res.json() as unknown;
+        // console.log("raw response of get all users", json);
         // Validate the response with our schema
-        // return getAllUsersResponseSchema.parse(json);
-        return json;
+        const validated = getAllUsersResponseSchema.parse(json);
+        console.log("validated response of get all users", validated);
+        return validated.success ? validated : null;
     }),
 
     // get my info
@@ -30,9 +31,10 @@ export const userRouter = createTRPCRouter({
                 Authorization: `Bearer ${ctx.token}`,
             },
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response", json);
-        return json;
+        const validated = getMyInfoResponseSchema.parse(json);
+        return validated.success ? validated : null;
     }),
 
     // get user info by id
@@ -45,8 +47,9 @@ export const userRouter = createTRPCRouter({
                 Authorization: `Bearer ${ctx.token}`,
             },
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response", json);
-        return json;
+        const validated = getUserInfoResponseSchema.parse(json);
+        return validated.success ? validated : null;
     }),
 });

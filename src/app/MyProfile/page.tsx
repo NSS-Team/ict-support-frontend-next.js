@@ -6,14 +6,13 @@ import {
   MapPin, Briefcase, Award, Globe
 } from 'lucide-react';
 import {useUser} from '@clerk/nextjs';
+import Image from 'next/image';
 import Loader from '../_components/Loader';
 import LoginRequired from '../_components/unauthorized/loginToContinue';
 
 export default function MyProfilePage() {
-  // Get current user ID (you might get this from auth context or session)
-  // const [currentUserId] = useState<string>('current-user-id'); // Replace with actual current user ID
   const { isLoaded, isSignedIn, user } = useUser();
-  const userRole = user?.publicMetadata.role || 'user'; // Default to 'user' if role is not set
+  const userRole = user?.publicMetadata.role ?? 'user'; // Default to 'user' if role is not set
 
   // fetching the user info for the profile page
   const { data: userInfo, isLoading, isError, refetch } = api.users.getMyInfo.useQuery(undefined, {
@@ -108,7 +107,7 @@ export default function MyProfilePage() {
     return (`${first ?? ''}${last ?? ''}`).toUpperCase();
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -116,7 +115,7 @@ export default function MyProfilePage() {
     });
   };
 
-  const formatLastUpdated = (date: Date) => {
+  const formatLastUpdated = (date: Date | string) => {
     const now = new Date();
     const updated = new Date(date);
     const diffInHours = Math.floor((now.getTime() - updated.getTime()) / (1000 * 60 * 60));
@@ -165,9 +164,11 @@ export default function MyProfilePage() {
               <div className="p-4 sm:p-6 text-center">
                 <div className="relative inline-block mb-3 sm:mb-4">
                   {userData.picUrl ? (
-                    <img
+                    <Image
                       src={userData.picUrl}
                       alt="Profile"
+                      width={96}
+                      height={96}
                       className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-lg"
                       onError={(e) => {
                         // Fallback to initials if image fails to load
@@ -337,7 +338,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
-                      <span className="text-sm sm:text-base text-gray-900 font-medium">{userData.phone || 'Not provided'}</span>
+                      <span className="text-sm sm:text-base text-gray-900 font-medium">{userData.phone ?? 'Not provided'}</span>
                     </div>
                   </div>
 
@@ -348,7 +349,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <Building className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
-                      <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.department || 'Not assigned'}</span>
+                      <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.department ?? 'Not assigned'}</span>
                     </div>
                   </div>
 
@@ -360,7 +361,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
-                      <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.designation || 'Not specified'}</span>
+                      <span className="text-sm sm:text-base text-gray-900 font-medium truncate">{userData.designation ?? 'Not specified'}</span>
                     </div>
                   </div>}
 
@@ -371,7 +372,7 @@ export default function MyProfilePage() {
                     </label>
                     <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
-                      <span className="text-sm sm:text-base text-gray-900 font-medium">{userData.officeNumber || 'Not assigned'}</span>
+                      <span className="text-sm sm:text-base text-gray-900 font-medium">{userData.officeNumber ?? 'Not assigned'}</span>
                     </div>
                   </div>
 

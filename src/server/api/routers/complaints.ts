@@ -7,6 +7,8 @@ import { getCategoryResponseSchema, getIssueOptionResponseSchema, getSubCategory
 import { getComplainInfoResponseSchema } from "~/types/responseTypes/ticketResponses";
 import { attachmentSchema } from "~/types/attachments";
 import { generateComplainResponseSchema } from "~/types/responseTypes/ticketResponses";
+import { responseWithoutDataSchema } from "~/lib/responseSchema";
+import { getComplaintLogsResponseSchema } from "~/types/responseTypes/ticketResponses";
 
 export const complaintsRouter = createTRPCRouter({
 
@@ -20,7 +22,7 @@ export const complaintsRouter = createTRPCRouter({
                 Authorization: `Bearer ${ctx.token}`,
             },
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response", json);
         const validated = getCategoryResponseSchema.parse(json);
         console.log("validated response", validated);
@@ -36,11 +38,11 @@ export const complaintsRouter = createTRPCRouter({
                     Authorization: `Bearer ${ctx.token}`,
                 },
             });
-            const json = await res.json();
+            const json = await res.json() as unknown;
             console.log("raw response", json);
-            // const validated = getSubCategoryResponseSchema.parse(json);
-            // console.log("validated response", validated);
-            return json;
+            const validated = getSubCategoryResponseSchema.parse(json);
+            console.log("validated response", validated);
+            return validated;
         }),
 
     // get issue options by subcategory ID
@@ -52,11 +54,11 @@ export const complaintsRouter = createTRPCRouter({
                     Authorization: `Bearer ${ctx.token}`,
                 },
             });
-            const json = await res.json();
+            const json = await res.json() as unknown;
             console.log("raw response", json);
-            // const validated = getIssueOptionResponseSchema.parse(json);
-            // console.log("validated response", validated);
-            return json;
+            const validated = getIssueOptionResponseSchema.parse(json);
+            console.log("validated response", validated);
+            return validated;
         }),
 
     // get complaint info by complaint ID
@@ -69,7 +71,7 @@ export const complaintsRouter = createTRPCRouter({
                 },
                 cache: "no-store",
             });
-            const json = await res.json();
+            const json = await res.json() as unknown;
             console.log("raw response of complaint info", json);
             const validated = getComplainInfoResponseSchema.parse(json);
             console.log("validated response of complaint info", validated);
@@ -99,7 +101,7 @@ export const complaintsRouter = createTRPCRouter({
             },
             body: JSON.stringify(input),
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of generate complain", json);
         const validated = generateComplainResponseSchema.parse(json);
         console.log("validated response of generate complain", validated);
@@ -120,11 +122,11 @@ export const complaintsRouter = createTRPCRouter({
             },
             body: JSON.stringify(input),
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of assign complain to worker", json);
-                    // const validated = assignComplainToWorkerResponseSchema.parse(json);
-                    // console.log("validated response of assign complain to worker", validated);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response of assign complain to worker", validated);
+        return validated;
     }),
 
 
@@ -143,11 +145,13 @@ export const complaintsRouter = createTRPCRouter({
             },
             body: JSON.stringify(input),
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of forward complain to team", json);
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response of forward complain to team", validated);
         // const validated = forwardComplainToTeamResponseSchema.parse(json);
         // console.log("validated response of forward complain to team", validated);
-        return json;
+        return validated;
     }),
 
     // get complaint logs
@@ -158,11 +162,12 @@ export const complaintsRouter = createTRPCRouter({
                 Authorization: `Bearer ${ctx.token}`,
             },
         });
-        const json = await res.json();
-        console.log("raw response of get complaint logs", json.data);
-        return json;
-    }
-    ),
+        const json = await res.json() as unknown;
+        console.log("raw response of get complaint logs", json);
+        const validated = getComplaintLogsResponseSchema.parse(json);
+        console.log("validated response of get complaint logs", validated);
+        return validated;
+    }),
 
     // delete a complaint
     deleteComplaint: publicProcedure.input(z.object({ complaintId: z.string() })).mutation(async ({ ctx, input }) => {
@@ -174,9 +179,11 @@ export const complaintsRouter = createTRPCRouter({
                 Authorization: `Bearer ${ctx.token}`,
             },
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of delete complaint", json);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response of delete complaint", validated);
+        return validated;
     }),
 
     // resolve a complaint 
@@ -194,11 +201,11 @@ export const complaintsRouter = createTRPCRouter({
             },
             body: JSON.stringify(input),
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of resolve complaint", json);
-        // const validated = resolveComplaintResponseSchema.parse(json);
-        // console.log("validated response of resolve complaint", validated);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response of resolve complaint", validated);
+        return validated;
     }),
 
     // add worker to existing assignment of ticket
@@ -215,11 +222,11 @@ export const complaintsRouter = createTRPCRouter({
             },
             body: JSON.stringify(input),
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of add worker to assignment", json);
-        // const validated = addWorkerToAssignmentResponseSchema.parse(json);
-        // console.log("validated response of add worker to assignment", validated);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response of add worker to assignment", validated);
+        return validated;
     }),
 
     // give feedback on a complaint
@@ -237,11 +244,11 @@ export const complaintsRouter = createTRPCRouter({
             },
             body: JSON.stringify(input),
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of give feedback", json);
-        // const validated = giveFeedbackResponseSchema.parse(json);
-        // console.log("validated response of give feedback", validated);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response of give feedback", validated);
+        return validated;
     }),
 
     // close ticket 
@@ -257,11 +264,11 @@ export const complaintsRouter = createTRPCRouter({
             },
             body: JSON.stringify(input),
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of close ticket", json);
-        // const validated = closeTicketResponseSchema.parse(json);
-        // console.log("validated response of close ticket", validated);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response of close ticket", validated);
+        return validated;
     }),
 
     // reopen ticket
@@ -277,11 +284,11 @@ export const complaintsRouter = createTRPCRouter({
             },
             body: JSON.stringify(input),
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of reopen ticket", json);
-        // const validated = reopenTicketResponseSchema.parse(json);
-        // console.log("validated response of reopen ticket", validated);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response of reopen ticket", validated);
+        return validated;
     }),
 
     // activate a ticket in queue
@@ -297,10 +304,10 @@ export const complaintsRouter = createTRPCRouter({
             },
             body: JSON.stringify(input),
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of activate ticket in queue", json);
-        // const validated = activateTicketInQueueResponseSchema.parse(json);
-        // console.log("validated response of activate ticket in queue", validated);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response of activate ticket in queue", validated);
+        return validated;
     }),
 });

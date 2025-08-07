@@ -3,18 +3,17 @@
 import { useState } from 'react';
 import RegularUserForm from './EmployeeForm';
 import SupportTeamForm from './SupportTeamForm';
-import { supportStaffRolesEnum, type supportStaffRoles } from '~/types/enums';
+import { supportStaffRolesEnum, } from '~/types/enums';
 import type { SupportStaffMember } from '~/types/user/supportStaffMemberSchema';
 import type { NustEmployee } from '~/types/user/nustEmployeeSchema';
-import { User, Shield, ArrowLeft, ArrowRight } from 'lucide-react';
+import { User, Shield } from 'lucide-react';
 
 interface Props {
   initialUser: SupportStaffMember | NustEmployee;
-  supportRoles: supportStaffRoles;
   onSubmit: (data: Partial<SupportStaffMember | NustEmployee>) => void;
 }
 
-const UserProfileForm = ({ initialUser, supportRoles, onSubmit }: Props) => {
+const UserProfileForm = ({ initialUser, onSubmit }: Props) => {
   const [isSupportTeam, setIsSupportTeam] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -97,7 +96,7 @@ const UserProfileForm = ({ initialUser, supportRoles, onSubmit }: Props) => {
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">Support Team Member</h3>
                     <p className="text-gray-600 mb-3">
-                      Join our support team to help users, resolve issues, and maintain the platform. You'll have access to advanced tools and administrative features.
+                      Join our support team to help users, resolve issues, and maintain the platform. You&apos;ll have access to advanced tools and administrative features.
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">Admin Access</span>

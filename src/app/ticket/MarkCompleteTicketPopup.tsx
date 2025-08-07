@@ -173,7 +173,7 @@ export default function MarkCompleteTicketPopup({ open, setOpen, ticketId }: Clo
         uploads: uploadsWithUrls,
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error closing ticket:', error);
       addToast('Error closing ticket. Please try again.');
       setIsSubmitting(false);
@@ -202,7 +202,7 @@ export default function MarkCompleteTicketPopup({ open, setOpen, ticketId }: Clo
               {uploadProgress || 'Closing ticket...'}
             </h3>
             <p className="text-sm text-gray-600">
-              Please don't close this window. This may take a few moments.
+              Please don&apos;t close this window. This may take a few moments.
             </p>
             {uploads.length > 0 && (
               <div className="mt-4 bg-gray-100 rounded-lg p-3">
@@ -310,7 +310,7 @@ export default function MarkCompleteTicketPopup({ open, setOpen, ticketId }: Clo
                 <div className="flex flex-col items-center">
                   <Upload className="w-12 h-12 text-green-400 mb-4" />
                   <p className="text-lg font-medium text-gray-700 mb-2">Drop files here to upload</p>
-                  <p className="text-sm text-gray-500 mb-4">or click "Browse Files" to select from your device</p>
+                  <p className="text-sm text-gray-500 mb-4">or click &quot;Browse Files&quot; to select from your device</p>
                   <p className="text-xs text-gray-400">Supports: Images, Documents, Videos, Log Files (Max 10MB each)</p>
                 </div>
               </div>

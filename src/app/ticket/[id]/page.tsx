@@ -1,19 +1,20 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, User, MapPin, Clock, Paperclip, Settings, Trash2, MoreVertical, Send, UserPlus, Wrench, MessageSquare } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, Settings, Trash2, MoreVertical, Send, UserPlus, MessageSquare } from 'lucide-react';
 import { api } from '~/trpc/react';
 import { format } from 'date-fns';
 import Loader from '~/app/_components/Loader';
-import { File } from 'lucide-react';
+// import { File } from 'lucide-react';
 import { priorityColorMap } from '~/lib/PriorityColorMap';
 import { complaintStatusColorMap } from '~/lib/statusColorMap';
+import type { WorkerComplaintStatus } from '~/types/enums';
 import PopupImageViewer from '~/app/_components/PopupImageViewer';
 import { useState } from 'react';
 import MyTeamPopup from '~/app/ticket/myTeamPopups';
 import ForwardTeamPopup from '~/app/ticket/forwardComplaintPopup';
 import { useUser } from '@clerk/nextjs';
-import type { log } from '~/types/logs/log';
+// import type { log } from '~/types/logs/log';
 import { useEffect } from 'react';
 import { useToast } from '~/app/_components/ToastProvider';
 import MarkCompleteTicketPopup from '~/app/ticket/MarkCompleteTicketPopup';
@@ -50,18 +51,24 @@ export default function TicketDetailPage() {
   // api to fetch the ticket details
   const { data: ticket, isLoading, error } = api.complaints.getComplainInfo.useQuery({ id });
   const complaint = ticket?.data?.complaint;
-  const formattedAttachments = ticket?.data?.formattedAttachments as any || {};
-  const employeeAttachments = formattedAttachments?.employeeAttachments || [];
-  const workerAttachments = formattedAttachments?.workerAttachments || [];
+  const formattedAttachments = ticket?.data?.formattedAttachments ?? { employeeAttachments: [], workerAttachments: [] };
+  const employeeAttachments = formattedAttachments.employeeAttachments.map(attachment => ({
+    ...attachment,
+    note: attachment.note ?? undefined
+  })) || [];
+  const workerAttachments = formattedAttachments.workerAttachments.map(attachment => ({
+    ...attachment,
+    note: attachment.note ?? undefined
+  })) || [];
   console.log("formattedAttachments:", formattedAttachments)
   console.log("employeeAttachments:", employeeAttachments)
   console.log("workerAttachments:", workerAttachments)
-  const workers = ticket?.data?.complaint?.assignedWorkers?.workers || [];
+  const workers = ticket?.data?.complaint?.assignedWorkers?.workers ?? [];
   const currentWorkerStatus = ticket?.data?.complaint?.assignedWorkers?.currentWorkerStatus;
 
   // api to fetch the complaint logs
-  const { data: getComplaintLogsResponse, refetch: refetchLogs, isLoading: isLogsLoading } = api.complaints.getComplaintLogs.useQuery({ complaintId: id });
-  const logs = getComplaintLogsResponse?.data?.logs || [];
+  const { data: getComplaintLogsResponse, isLoading: isLogsLoading } = api.complaints.getComplaintLogs.useQuery({ complaintId: id });
+  const logs = getComplaintLogsResponse?.data?.logs ?? [];
 
   // api to delete the complaint
   // this will be used when the user clicks on delete button
@@ -131,7 +138,7 @@ export default function TicketDetailPage() {
       console.error('Error deleting complaint:', deleteError);
       alert('Failed to delete the complaint. Please try again later.');
     }
-  }, [isDeleteSuccess, isDeleteError, deleteError, user, router]);
+  }, [isDeleteSuccess, isDeleteError, deleteError, user, router, addToast]);
 
   useEffect(() => {
     if (isAddWorkerSuccess) {
@@ -230,14 +237,14 @@ export default function TicketDetailPage() {
   }
 
   // Feedback handlers
-  const handleFeedbackSubmit = (feedbackData: any) => {
+  const handleFeedbackSubmit = (feedbackData: { rating: number; comment?: string; action: 'close' | 'reopen' }) => {
     console.log('Feedback submitted:', feedbackData);
     
     if (feedbackData.action === 'close') {
       // Submit feedback with rating and comment
       submitFeedback({
         complaintId: id,
-        feedback: feedbackData.comment || 'No additional comments',
+        feedback: feedbackData.comment ?? 'No additional comments',
         score: feedbackData.rating
       });
     } else if (feedbackData.action === 'reopen') {
@@ -464,13 +471,13 @@ export default function TicketDetailPage() {
               <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 sm:pb-0 sm:overflow-visible sm:flex-wrap -mx-1 px-1">
                 <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Priority</span>
-                  <span className={`inline-flex text-white items-center px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${priorityColorMap[complaint?.priority?.toLowerCase() ?? ''] || priorityColorMap.default}`}>
+                  <span className={`inline-flex text-white items-center px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${priorityColorMap[complaint?.priority?.toLowerCase() ?? ''] ?? priorityColorMap.default}`}>
                     {complaint?.priority}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
-                  <span className={`inline-flex text-white items-center px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${complaintStatusColorMap[complaint?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default}`}>
+                  <span className={`inline-flex text-white items-center px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${complaintStatusColorMap[complaint?.status?.toLowerCase() ?? ''] ?? complaintStatusColorMap.default}`}>
                     {complaint?.status}
                   </span>
                 </div>
@@ -498,12 +505,12 @@ export default function TicketDetailPage() {
               <AssignedWorkersCard 
                 assignedWorkers={
                   workers && workers.length > 0
-                    ? workers.map((worker: any) => ({
+                    ? workers.map((worker: { workerId: number; workerName: string; workerPic: string; workerStatus?: string; workerUserId?: string; teamId?: number }) => ({
                         workerId: worker.workerId,
                         workerUserId: worker.workerUserId ?? '',
                         teamId: worker.teamId ?? 0,
                         workerName: worker.workerName ?? 'Unknown',
-                        status: worker.workerStatus ?? 'active',
+                        status: (worker.workerStatus ?? 'active') as WorkerComplaintStatus,
                         picUrl: worker.workerPic || '', // optional URL for worker's profile picture
                       }))
                     : undefined
@@ -538,19 +545,19 @@ export default function TicketDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-1">
                     <label className="text-xs sm:text-sm font-medium text-gray-500">Device</label>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium break-words">{complaint?.device || 'Not specified'}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium break-words">{complaint?.device ?? 'Not specified'}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs sm:text-sm font-medium text-gray-500">Category</label>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.categoryName || 'Uncategorized'}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.categoryName ?? 'Uncategorized'}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs sm:text-sm font-medium text-gray-500">Subcategory</label>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.subCategoryName || 'Not specified'}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.subCategoryName ?? 'Not specified'}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs sm:text-sm font-medium text-gray-500">Issue Type</label>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.issueOptionName || 'General'}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{complaint?.issueOptionName ?? 'General'}</p>
                   </div>
                 </div>
               </div>
@@ -641,30 +648,39 @@ export default function TicketDetailPage() {
                 ) : logs.length === 0 ? (
                   <p className="text-sm text-gray-500">No logs available.</p>
                 ) : (
-                  logs.map((log: log) => (
-                    <div key={log.id} className="flex items-start gap-3">
-                      <div
-                        className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${complaintStatusColorMap[log.status] || "bg-gray-400"}`}
-                      ></div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900 capitalize">
-                          {log.status.replaceAll("_", " ")}
-                        </p>
-                        {log.comment && (
-                          <p className="text-sm text-gray-700 italic">“{log.comment}”</p>
-                        )}
-                        <p className="text-xs text-gray-500 mt-1">
-                          <span className="text-blue-600 font-medium">
-                            {log.changedByName ? `By ${log.changedByName}` : "By system"}
-                          </span>{" "}
-                          ·{" "}
-                          <span className="text-gray-400">
-                            {log.timeStamp ? format(new Date(log.timeStamp), "PPpp") : "Unknown time"}
-                          </span>
-                        </p>
+                  logs.map((log) => {
+                    // Ensure complaintId is a string and comment/changedByName are nullable
+                    const safeLog = {
+                      ...log,
+                      complaintId: String(log.complaintId),
+                      comment: log.comment ?? null,
+                      changedByName: log.changedByName ?? null,
+                    };
+                    return (
+                      <div key={safeLog.id} className="flex items-start gap-3">
+                        <div
+                          className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${complaintStatusColorMap[safeLog.status] ?? "bg-gray-400"}`}
+                        ></div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-gray-900 capitalize">
+                            {safeLog.status.replaceAll("_", " ")}
+                          </p>
+                          {safeLog.comment && (
+                            <p className="text-sm text-gray-700 italic">“{safeLog.comment}”</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            <span className="text-blue-600 font-medium">
+                              {safeLog.changedByName ? `By ${safeLog.changedByName}` : "By system"}
+                            </span>{" "}
+                            ·{" "}
+                            <span className="text-gray-400">
+                              {safeLog.timeStamp ? format(new Date(safeLog.timeStamp), "PPpp") : "Unknown time"}
+                            </span>
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -686,12 +702,13 @@ export default function TicketDetailPage() {
                 mode="initial-assignment"
                 assignedWorkers={
                   complaint?.assignedWorkers
-                    ? complaint.assignedWorkers.workers.map((worker: any) => ({
+                    ? complaint.assignedWorkers.workers.map((worker: { workerId: number; workerName: string; workerUserId?: string; teamId?: number; status?: string; name?: string }) => ({
                       workerId: worker.workerId,
                       workerUserId: worker.workerUserId ?? '',
                       teamId: worker.teamId ?? 0,
                       workerName: worker.workerName ?? worker.name ?? 'Unknown',
-                      status: worker.status ?? 'active',
+                      status: (worker.status === 'resolved' || worker.status === 'in_queue') ? 'busy' : 'active' as const,
+                      isAssignedToThisComplaint: true,
                     }))
                     : undefined
                 }
@@ -707,12 +724,13 @@ export default function TicketDetailPage() {
                 mode="add-worker"
                 assignedWorkers={
                   complaint?.assignedWorkers
-                    ? complaint.assignedWorkers.workers.map((worker: any) => ({
+                    ? complaint.assignedWorkers.workers.map((worker: { workerId: number; workerName: string; workerUserId?: string; teamId?: number; status?: string; name?: string }) => ({
                       workerId: worker.workerId,
                       workerUserId: worker.workerUserId ?? '',
                       teamId: worker.teamId ?? 0,
                       workerName: worker.workerName ?? worker.name ?? 'Unknown',
-                      status: worker.status ?? 'active',
+                      status: (worker.status === 'resolved' || worker.status === 'in_queue') ? 'busy' : 'active' as const,
+                      isAssignedToThisComplaint: true,
                     }))
                     : undefined
                 }
@@ -735,8 +753,8 @@ export default function TicketDetailPage() {
             <FeedbackPopup
               isOpen={isFeedbackPopupOpen}
               onClose={() => setIsFeedbackPopupOpen(false)}
-              ticketId={complaint?.id || id}
-              ticketTitle={complaint?.title || 'Support Request'}
+              ticketId={complaint?.id ?? id}
+              ticketTitle={complaint?.title ?? 'Support Request'}
               onSubmitFeedback={handleFeedbackSubmit}
               onReopenTicket={handleReopenTicket}
               isSubmitting={isSubmittingFeedback || isClosingTicket || isReopeningTicket}

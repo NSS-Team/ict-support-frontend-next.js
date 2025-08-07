@@ -1,8 +1,8 @@
-import { stat } from "fs";
-import {z} from "zod";
+// import { stat } from "fs";
+import {boolean, z} from "zod";
 import { responseSchema } from "~/lib/responseSchema";
 import { teamWorkerStatusEnum } from "../enums";
-import { P } from "node_modules/framer-motion/dist/types.d-Bq-Qm38R";
+// import { P } from "node_modules/framer-motion/dist/types.d-Bq-Qm38R";
 
 export const getTeamDataSchema = z.object({
     id: z.string(),
@@ -22,16 +22,20 @@ export const getTeamWorkersDataSchema = z.object({
     workers : z.array(z.object({
         workerId: z.number(),
         workerUserId: z.string(),
+        workerPic: z.string().nullable().optional(),
         teamId: z.number(),
         workerName: z.string(),
         status: teamWorkerStatusEnum,
+        near: boolean().optional(),
+        queueCount: z.string().optional(),
+        isAssignedToThisComplaint: boolean().optional(),
         Points: z.number().optional(),
     }).optional()).optional(),
 
     manager: z.object({
         managerId: z.string(),
         managerName: z.string(),
-    }),
+    }).optional(),
 });
 
 export const getTeamsDataSchema = z.object({

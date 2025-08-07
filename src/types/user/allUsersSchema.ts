@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { userRolesEnum } from '../enums';
+import { responseSchema } from '~/lib/responseSchema';
 
 export const userSchema = z.object({
   id: z.string(),
@@ -7,9 +8,9 @@ export const userSchema = z.object({
   lastName: z.string(),
   email: z.string().email(),
   picUrl: z.string().optional(),
-  officeNumber: z.string().optional(),
-  department: z.string().optional(),
-  designation: z.string().optional(),
+  officeNumber: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
+  designation: z.string().optional().nullable(),
   phone: z.string(),
   locationName: z.string().optional(),
   role: userRolesEnum,
@@ -17,15 +18,13 @@ export const userSchema = z.object({
   codesGenerated: z.number().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  teamName: z.string().optional(),
-  points: z.number().optional().default(0),
+  teamName: z.string().optional().nullable(),
+  points: z.number().optional().default(0).nullable(),
 });
 
-export const getAllUsersResponseSchema = z.object({
-  message: z.string(),
-  success: z.boolean(),
-  data: z.array(userSchema),
-});
+export const getAllUsersResponseSchema = responseSchema(z.object({
+  users: z.array(userSchema),
+}));
 
 export type User = z.infer<typeof userSchema>;
 export type GetAllUsersResponse = z.infer<typeof getAllUsersResponseSchema>;

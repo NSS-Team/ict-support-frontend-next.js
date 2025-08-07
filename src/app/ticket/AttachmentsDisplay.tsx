@@ -1,6 +1,7 @@
 'use client';
 
 import { User, Wrench, File } from 'lucide-react';
+import Image from 'next/image';
 
 interface Attachment {
   url: string;
@@ -54,8 +55,8 @@ export default function AttachmentsDisplay({
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         {attachments.map((attachment, index) => {
           const url = attachment.url;
-          const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-          const isVideo = url.match(/\.(mp4|webm|ogg)$/i);
+          const isImage = /\.(jpeg|jpg|gif|png|webp)$/i.exec(url);
+          const isVideo = /\.(mp4|webm|ogg)$/i.exec(url);
 
           return (
             <div
@@ -65,9 +66,11 @@ export default function AttachmentsDisplay({
             >
               {isImage ? (
                 <div className="relative">
-                  <img
+                  <Image
                     src={url}
                     alt={`${isEmployee ? 'Employee' : 'Worker'} Attachment ${index + 1}`}
+                    width={200}
+                    height={128}
                     className="w-full h-20 sm:h-24 lg:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
                   />
                   <div className={`absolute top-1 right-1 ${themeClasses.badgeBgColor} text-white text-xs px-1.5 py-0.5 rounded-full`}>

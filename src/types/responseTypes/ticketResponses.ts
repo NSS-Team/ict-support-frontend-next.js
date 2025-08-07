@@ -2,6 +2,8 @@ import { attachmentSchema } from "../attachments";
 import { z } from 'zod';
 import { ticketDetailsSchema } from "../tickets/ticketDetails";
 import { responseSchema } from "~/lib/responseSchema";
+import { complaintStatusEnum } from "../enums";
+// import { timeStamp } from "console";
 
 
 // Schema for the data object of the response of 'getComplainInfo' containing ticket details and attachments
@@ -21,3 +23,16 @@ export const generateComplainDataSchema = z.object({
 });
 
 export const generateComplainResponseSchema = responseSchema(generateComplainDataSchema);
+
+export const getComplaintLogsDataSchema = z.object({
+    logs: z.array(z.object({
+        id: z.number(),
+        complaintId: z.number(),
+        comment: z.string(),
+        status: complaintStatusEnum,
+        changedByName: z.string(),
+        timeStamp: z.string(),
+    })),
+});
+
+export const getComplaintLogsResponseSchema = responseSchema(getComplaintLogsDataSchema);

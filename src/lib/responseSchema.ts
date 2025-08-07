@@ -7,3 +7,5 @@ export const responseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
     success: z.boolean(),    
     data: dataSchema.optional(), // Optional in case of errors
   });
+
+export const responseWithoutDataSchema = responseSchema(z.unknown());

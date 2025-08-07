@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Clock, User2, ChevronDown, ChevronUp, ArrowUpRight, AlertCircle, MessageSquare, Play } from 'lucide-react';
 import '~/styles/globals.css';
 import type { ticket } from '~/types/tickets/ticket';
@@ -9,7 +9,6 @@ import { complaintStatusLabelMap } from '~/lib/complaintStatusLabelMap';
 import { priorityColorMap } from '~/lib/PriorityColorMap';
 import { complaintStatusColorMap } from '~/lib/statusColorMap';
 import { useUser } from '@clerk/nextjs';
-import type { employeeticket } from '~/types/tickets/ticket';
 import { api } from '~/trpc/react';
 
 interface TicketProps {
@@ -18,9 +17,9 @@ interface TicketProps {
 
 const ComplaintCard = ({ ticket }: TicketProps) => {
   const { user } = useUser();
-  const role = user?.publicMetadata?.role || 'guest';
+  const role = user?.publicMetadata?.role ?? 'guest';
   const router = useRouter();
-  const [isMobile, setIsMobile] = useState(false);
+  // const [isMobile, setIsMobile] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const readableStatus = ticket?.status ? complaintStatusLabelMap[ticket.status] : 'UNKNOWN';
@@ -51,12 +50,12 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
   const showFeedbackPrompt = shouldShowFeedbackPrompt();
   const showActivateButton = shouldShowActivateButton();
 
-  useEffect(() => {
-    const checkScreen = () => setIsMobile(window.innerWidth < 768);
-    checkScreen();
-    window.addEventListener('resize', checkScreen);
-    return () => window.removeEventListener('resize', checkScreen);
-  }, []);
+  // useEffect(() => {
+  //   const checkScreen = () => setIsMobile(window.innerWidth < 768);
+  //   checkScreen();
+  //   window.addEventListener('resize', checkScreen);
+  //   return () => window.removeEventListener('resize', checkScreen);
+  // }, []);
 
   const handleFeedbackClick = () => {
     router.push(`/ticket/${ticket?.id}?feedback=true`);
@@ -161,7 +160,7 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
               )}
               <span className={`text-white text-xs font-medium rounded px-2 py-1 ${
-                complaintStatusColorMap[ticket?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default
+                complaintStatusColorMap[ticket?.status?.toLowerCase() ?? ''] ?? complaintStatusColorMap.default
               }`}>
                 {readableStatus}
               </span>
@@ -196,9 +195,9 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
           {/* Priority Row */}
           <div className="flex justify-end mb-4">
             <span className={`text-white text-xs font-medium px-2 py-1 rounded ${
-              priorityColorMap[ticket?.priority?.toLowerCase() ?? ''] || priorityColorMap.default
+              priorityColorMap[ticket?.priority?.toLowerCase() ?? ''] ?? priorityColorMap.default
             }`}>
-              {ticket?.priority?.toUpperCase() || 'UNKNOWN'}
+              {ticket?.priority?.toUpperCase() ?? 'UNKNOWN'}
             </span>
           </div>
 
@@ -247,15 +246,15 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
             <div className="space-y-3">
               <div>
                 <dt className="text-xs font-medium text-gray-500 mb-1">Preferred Mode</dt>
-                <dd className="text-sm text-gray-900">{ticket?.submissionPreference || 'Not specified'}</dd>
+                <dd className="text-sm text-gray-900">{ticket?.submissionPreference ?? 'Not specified'}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium text-gray-500 mb-1">Category</dt>
-                <dd className="text-sm text-gray-900">{ticket?.categoryName || 'Not assigned'}</dd>
+                <dd className="text-sm text-gray-900">{ticket?.categoryName ?? 'Not assigned'}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium text-gray-500 mb-1">Subcategory</dt>
-                <dd className="text-sm text-gray-900">{ticket?.subCategoryName || 'Not assigned'}</dd>
+                <dd className="text-sm text-gray-900">{ticket?.subCategoryName ?? 'Not assigned'}</dd>
               </div>
             </div>
           </div>
@@ -278,7 +277,7 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
                   )}
                 </div>
                 <span className={`text-white text-xs font-medium rounded px-2 py-1 ${
-                  complaintStatusColorMap[ticket?.status?.toLowerCase() ?? ''] || complaintStatusColorMap.default
+                  complaintStatusColorMap[ticket?.status?.toLowerCase() ?? ''] ?? complaintStatusColorMap.default
                 }`}>
                   {readableStatus}
                 </span>
@@ -311,9 +310,9 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
               
               <div className="flex items-center gap-2">
                 <span className={`text-white text-xs font-medium px-2 py-1 rounded ${
-                  priorityColorMap[ticket?.priority?.toLowerCase() ?? ''] || priorityColorMap.default
+                  priorityColorMap[ticket?.priority?.toLowerCase() ?? ''] ?? priorityColorMap.default
                 }`}>
-                  {ticket?.priority?.toUpperCase() || 'UNKNOWN'}
+                  {ticket?.priority?.toUpperCase() ?? 'UNKNOWN'}
                 </span>
                 
                 {/* Desktop Activate Button */}
@@ -345,15 +344,15 @@ const ComplaintCard = ({ ticket }: TicketProps) => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               <div>
                 <dt className="text-sm font-medium text-gray-500 mb-1">Preferred Mode</dt>
-                <dd className="text-sm text-gray-900">{ticket?.submissionPreference || 'Not specified'}</dd>
+                <dd className="text-sm text-gray-900">{ticket?.submissionPreference ?? 'Not specified'}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500 mb-1">Category</dt>
-                <dd className="text-sm text-gray-900">{ticket?.categoryName || 'Not assigned'}</dd>
+                <dd className="text-sm text-gray-900">{ticket?.categoryName ?? 'Not assigned'}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500 mb-1">Subcategory</dt>
-                <dd className="text-sm text-gray-900">{ticket?.subCategoryName || 'Not assigned'}</dd>
+                <dd className="text-sm text-gray-900">{ticket?.subCategoryName ?? 'Not assigned'}</dd>
               </div>
             </div>
           </div>

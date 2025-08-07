@@ -2,6 +2,7 @@
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { z } from "zod";
 import { unapprovedRegistrationsResponseSchema } from "~/types/responseTypes/adminDashResponses/adminDashResponses";
+import { getAllUsersResponseSchema } from "~/types/user/allUsersSchema";
 
 export const adminDashRouter = createTRPCRouter({
     // Add your admin dashboard related procedures here
@@ -15,9 +16,9 @@ export const adminDashRouter = createTRPCRouter({
                 "Content-Type": "application/json",
             },
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response", json);
-        console.log("unapproved registrations", json.data.unapprovedUsers);
+        console.log("unapproved registrations", json);
         const validated = unapprovedRegistrationsResponseSchema.parse(json);
         // if (!validated?.data?.success) {
         //     console.error("Validation error", validated.error);
@@ -39,9 +40,11 @@ export const adminDashRouter = createTRPCRouter({
                 },
                 body: JSON.stringify({ USERID: input.USERID }),
             });
-            const json = await res.json();
+            const json = await res.json() as unknown;
             console.log("raw response of approve user", json);
-            return json;
+            const validated = unapprovedRegistrationsResponseSchema.parse(json);
+            console.log("validated response of approve user", validated);
+            return validated;
 
         }),
 
@@ -59,10 +62,11 @@ export const adminDashRouter = createTRPCRouter({
                 },
                 body: JSON.stringify({ USERID: input.USERID }),
             });
-            const json = await res.json();
+            const json = await res.json() as unknown;
             console.log("raw response of reject user", json);
-            return json;
-
+            const validated = unapprovedRegistrationsResponseSchema.parse(json);
+            console.log("validated response of reject user", validated);
+            return validated;
         }),
 
         // getAll users 
@@ -74,9 +78,11 @@ export const adminDashRouter = createTRPCRouter({
                 "Content-Type": "application/json",
             },
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response of get all users", json);
-        return json;
+        const validated = getAllUsersResponseSchema.parse(json);
+        console.log("validated response of get all users", validated);
+        return validated;
     }),
 
 

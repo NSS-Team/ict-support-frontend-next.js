@@ -1,6 +1,7 @@
 'use client';
 
 import { Mail, Building, Users, Calendar, UserCheck, UserX, X, Phone, MapPin, Clock, Shield, Briefcase, Hash, User, Wrench } from 'lucide-react';
+import Image from 'next/image';
 
 interface ViewUserProps {
     user: {
@@ -62,7 +63,7 @@ export default function ViewUser({
     };
 
     // Helper function to check if field has value (handles empty strings)
-    const hasValue = (value: any): boolean => {
+    const hasValue = (value: string | null | undefined): boolean => {
         return value !== null && value !== undefined && value !== '';
     };
 
@@ -158,9 +159,11 @@ export default function ViewUser({
                                     'bg-gradient-to-br from-gray-500 to-gray-600'
                                 }`}>
                                     {hasValue(user.picUrl) ? (
-                                        <img
+                                        <Image
                                             src={user.picUrl!}
                                             alt={`${user.firstName} ${user.lastName}`}
+                                            width={80}
+                                            height={80}
                                             className="w-full h-full object-cover rounded-full"
                                             onError={(e) => {
                                                 e.currentTarget.style.display = 'none';

@@ -5,6 +5,7 @@ import { LogOut } from 'lucide-react';
 import { SignOutButton } from '@clerk/nextjs';
 import { useUser } from '@clerk/nextjs';
 import NotificationsComponent from './notifications';
+import Image from 'next/image';
 
 const Navbar = () => {
   const { user } = useUser();
@@ -16,7 +17,7 @@ const Navbar = () => {
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
-            <img src="/nust-seeklogo.png" alt="NUST Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
+            <Image src="/nust-seeklogo.png" alt="NUST Logo" className="w-6 h-6 sm:w-8 sm:h-8" width={48} height={48}/>
           </div>
           <div className="hidden sm:block">
             <h1 className="text-xl font-bold text-gray-900">NSS</h1>

@@ -1,10 +1,9 @@
 'use client'
 
 import { useSecurityCodes } from "~/hooks/securityCodes";
-import React, { useState } from "react";
+import React from "react";
 import '~/styles/globals.css';
 import Loader from '~/app/_components/Loader';
-import Sidebar from '~/app/_components/Sidebar';
 import { api } from '~/trpc/react';
 import SecurityCodeHandler from "~/app/_components/securityCodes/SecurityCodesPopupHandler";
 import TicketsOnDash from "~/app/_components/tickets/TicketsOnDash";
@@ -14,7 +13,7 @@ import Unauthorized from "~/app/_components/unauthorized/unauthorized";
 import ErrorLoading from "~/app/_components/unauthorized/errorLoading";
 
 export default function EmployeePage() {
-  const { showModal, setShowModal, isError, codes, retry, userLoaded,
+  const { showModal, setShowModal, isError, codes, retry,
   } = useSecurityCodes();
 
 

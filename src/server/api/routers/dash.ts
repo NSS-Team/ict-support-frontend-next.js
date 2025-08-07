@@ -14,7 +14,7 @@ export const dashRouter = createTRPCRouter({
         Authorization: `Bearer ${ctx.token}`,
       },
     });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response", json);
         const validated = getComplainsEmpResponseSchema.parse(json);
         console.log("validated response", validated);
@@ -31,7 +31,7 @@ export const dashRouter = createTRPCRouter({
                 Authorization: `Bearer ${ctx.token}`,
             },
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response", json);
         const validated = getComplainsWorkerResponseSchema.parse(json);
         console.log("validated response", validated);

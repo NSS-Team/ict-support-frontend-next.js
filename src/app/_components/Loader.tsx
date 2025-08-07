@@ -1,17 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 
 export default function Loader() {
-  const [currentDot, setCurrentDot] = useState(0);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentDot((prev) => (prev + 1) % 3);
-    }, 400);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="flex items-center justify-center">

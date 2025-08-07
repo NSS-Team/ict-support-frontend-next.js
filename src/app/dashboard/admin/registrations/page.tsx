@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { Search, Calendar, Users, Mail, Building, Eye, Clock, Grid, List, X, Shield, Wrench, Filter } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { api } from '~/trpc/react';
+import Image from 'next/image';
 import Loader from "~/app/_components/Loader";
 import LoginRequired from "~/app/_components/unauthorized/loginToContinue";
 import Unauthorized from "~/app/_components/unauthorized/unauthorized";
@@ -680,9 +681,11 @@ export default function NewRegistrationsPage() {
                                             {/* Avatar */}
                                             <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden ${roleInfo.color} flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
                                                 {hasValue(user.picUrl) ? (
-                                                    <img
+                                                    <Image
                                                         src={user.picUrl!}
                                                         alt={`${user.firstName} ${user.lastName}`}
+                                                        width={48}
+                                                        height={48}
                                                         className="w-full h-full object-cover"
                                                         onError={(e) => {
                                                             e.currentTarget.style.display = 'none';
@@ -781,9 +784,11 @@ export default function NewRegistrationsPage() {
                                     <div className="flex items-center mb-3">
                                         <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden ${roleInfo.color} flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
                                             {hasValue(user.picUrl) ? (
-                                                <img
+                                                <Image
                                                     src={user.picUrl!}
                                                     alt={`${user.firstName} ${user.lastName}`}
+                                                    width={48}
+                                                    height={48}
                                                     className="w-full h-full object-cover"
                                                     onError={(e) => {
                                                         e.currentTarget.style.display = 'none';

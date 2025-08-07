@@ -1,4 +1,4 @@
-import { getComplainsEmpResponseSchema, getComplainsWorkerResponseSchema } from "~/types/responseTypes/dashReponseTypes";
+import { getComplainsWorkerResponseSchema } from "~/types/responseTypes/dashReponseTypes";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 
 export const workerDashRouter = createTRPCRouter({
@@ -12,7 +12,7 @@ export const workerDashRouter = createTRPCRouter({
         },
     });
 
-    const data = await res.json();
+    const data = await res.json() as unknown;
     console.log("raw response", data);
     const validated = getComplainsWorkerResponseSchema.parse(data);
     return validated;

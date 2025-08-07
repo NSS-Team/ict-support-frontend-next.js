@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { attachmentRoleEnum } from './enums';
+// import { attachmentRoleEnum } from './enums';
 
 export const attachmentSchema = z.object({
   type: z.string().max(50),

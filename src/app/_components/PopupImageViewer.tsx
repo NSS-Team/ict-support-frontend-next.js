@@ -2,6 +2,7 @@
 
 import { X, ZoomIn, ZoomOut, RefreshCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 
 interface PopupImageViewerProps {
   imageUrl: string;
@@ -109,10 +110,12 @@ const PopupImageViewer = ({ imageUrl, onClose }: PopupImageViewerProps) => {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      <img
+      <Image
         ref={imgRef}
         src={imageUrl}
         alt="Popup"
+        width={800}
+        height={600}
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
         style={{
@@ -122,6 +125,7 @@ const PopupImageViewer = ({ imageUrl, onClose }: PopupImageViewerProps) => {
         }}
         className="max-h-[90vh] w-auto rounded-lg shadow-lg z-40 select-none"
         draggable={false}
+        unoptimized={true}
       />
     </div>
   </div>

@@ -1,6 +1,7 @@
 // import { get } from "http";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { z } from "zod";
+import { responseWithoutDataSchema } from "~/lib/responseSchema";
 import { NotificationResponseSchema } from "~/types/responseTypes/notificationsResponses";
 export const notificationRouter = createTRPCRouter({
   // Define your notification-related procedures here
@@ -18,16 +19,12 @@ export const notificationRouter = createTRPCRouter({
       },
     });
 
-    const json = await res.json();
+    const json = await res.json() as unknown;
     console.log("notifications: ", json);
     // Validate the response against the NotificationResponseSchema
-    // const validated = NotificationResponseSchema.safeParse(json);
-    // if (!validated.success) {
-    //     console.error("Validation error:", validated.error);
-    //     throw new Error("Invalid response format");
-    // }
-    // console.log("validated response", validated.data);
-    return json.data;
+    const validated = NotificationResponseSchema.parse(json);
+    console.log("validated response", validated.data);
+    return validated.data;
   }),
 
 //   mark single notification as read
@@ -43,9 +40,10 @@ export const notificationRouter = createTRPCRouter({
           },
         });
 
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response", json);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        return validated;
       }),
 
     // mark all notifications as read
@@ -59,8 +57,10 @@ export const notificationRouter = createTRPCRouter({
             Authorization: `Bearer ${ctx.token}`,
           },
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw response", json);
-        return json;
+        const validated = responseWithoutDataSchema.parse(json);
+        console.log("validated response", validated);
+        return validated;
         }),
     });

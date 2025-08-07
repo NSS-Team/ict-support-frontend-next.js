@@ -1,6 +1,7 @@
 
 // imports
 import { z } from "zod";
+import { responseWithoutDataSchema } from "~/lib/responseSchema";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 // schema imports 
 import { generateCodesResponseSchema, loginCheckResponseSchema } from "~/types/responseTypes/authResponses";
@@ -36,9 +37,11 @@ export const authRouter = createTRPCRouter({
         },
         body: JSON.stringify(input),
       });
-      const json = await res.json();
-      console.log(json)
-      return json
+      const json = await res.json() as unknown;
+      console.log(json);
+      const validated = responseWithoutDataSchema.parse(json);
+      console.log("validated response of complete profile", validated);
+      return validated;
     }),
 
   // this is to complete the profile for the staff member
@@ -68,8 +71,10 @@ export const authRouter = createTRPCRouter({
         console.error('Backend error:', err);
         throw new Error(`Failed to submit profile: ${res.status}`);
       }
-      const json = await res.json();
-      return json;
+      const json = await res.json() as unknown;
+      const validated = responseWithoutDataSchema.parse(json);
+      console.log("validated response of complete profile staff", validated);
+      return validated;
     }),
 
   // this is to approve a user
@@ -84,7 +89,11 @@ export const authRouter = createTRPCRouter({
           Authorization: `Bearer ${ctx.token}`,
         },
       });
-      return await res.json();
+      const json = await res.json() as unknown;
+      console.log("raw response of approve user", json);
+      const validated = responseWithoutDataSchema.parse(json);
+      console.log("validated response of approve user", validated);
+      return validated;
     }),
 
 
@@ -102,7 +111,11 @@ export const authRouter = createTRPCRouter({
         body: JSON.stringify({ code: input.code }),
         credentials: "include",
       });
-      return await res.json();
+      const json = await res.json() as unknown;
+      console.log("raw response of login with code", json);
+      const validated = responseWithoutDataSchema.parse(json);
+      console.log("validated response of login with code", validated);
+      return validated;
     }),
 
 
@@ -125,7 +138,11 @@ export const authRouter = createTRPCRouter({
         body: JSON.stringify(input),
         credentials: "include",
       });
-      return await res.json();
+      const json = await res.json() as unknown;
+      console.log("raw response of update password", json);
+      const validated = responseWithoutDataSchema.parse(json);
+      console.log("validated response of update password", validated);
+      return validated;
     }),
 
   // this is to check if the user exists and is approved
@@ -139,7 +156,7 @@ export const authRouter = createTRPCRouter({
       },
     });
 
-    const json = await res.json();
+    const json = await res.json() as unknown;
     console.log('loginCheck raw response:', json); // Add this for debugging
     const validated = loginCheckResponseSchema.parse(json);
     // console.log('loginCheck response:', validated);
@@ -157,7 +174,7 @@ export const authRouter = createTRPCRouter({
       },
     });
     
-    const json = await res.json();
+    const json = await res.json() as unknown;
     console.log('generateCodes raw response:', json); // Add this for debugging
     const validated = generateCodesResponseSchema.parse(json);
     // console.log('generateCodes response:', validated);

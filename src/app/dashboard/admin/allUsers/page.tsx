@@ -3,12 +3,18 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, Grid, List, Users, Phone, Mail, MapPin, Calendar, Award, Eye, MoreVertical, ChevronDown, Loader } from 'lucide-react';
 import { api } from '~/trpc/react';
+import Image from 'next/image';
 import type { User } from '~/types/user/allUsersSchema';
 
 const UsersPage = () => {
   // Fetch users from API
   const { data: usersResponse, isLoading, error } = api.users.getAllUsers.useQuery();
-  const users: User[] = usersResponse?.data?.users ?? [];
+  
+  // Wrap users in its own useMemo to prevent exhaustive-deps warnings
+  const users: User[] = useMemo(() => 
+    usersResponse?.data?.users ?? [], 
+    [usersResponse?.data?.users]
+  );
 
   const [viewMode, setViewMode] = useState('grid');
   const [selectedRole, setSelectedRole] = useState('all');
@@ -25,13 +31,13 @@ const UsersPage = () => {
   };
 
   const filteredAndSortedUsers = useMemo(() => {
-    let filtered = users.filter((user: User) => {
+    const filtered = users.filter((user: User) => {
       const matchesRole = selectedRole === 'all' || user.role === selectedRole;
       const matchesSearch = searchTerm === '' || 
         user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.teamName && user.teamName.toLowerCase().includes(searchTerm.toLowerCase()));
+        (user.teamName?.toLowerCase().includes(searchTerm.toLowerCase()));
       
       return matchesRole && matchesSearch;
     });
@@ -77,9 +83,11 @@ const UsersPage = () => {
       <div className="flex items-start justify-between mb-3 sm:mb-4">
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
           <div className="relative flex-shrink-0">
-            <img
-              src={user.picUrl || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=e5e7eb&color=374151&size=64`}
+            <Image
+              src={user.picUrl ?? `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=e5e7eb&color=374151&size=64`}
               alt={`${user.firstName} ${user.lastName}`}
+              width={64}
+              height={64}
               className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-100"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=e5e7eb&color=374151&size=64`;
@@ -92,7 +100,7 @@ const UsersPage = () => {
               {user.firstName} {user.lastName}
             </h3>
             <p className="text-xs sm:text-sm text-gray-600 truncate">
-              {user.designation || 'No designation'}
+              {user.designation ?? 'No designation'}
             </p>
           </div>
         </div>
@@ -113,17 +121,17 @@ const UsersPage = () => {
         </div>
         <div className="flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm text-gray-600">
           <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="truncate">{user.locationName || 'Not specified'}</span>
+          <span className="truncate">{user.locationName ?? 'Not specified'}</span>
         </div>
         <div className="flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm text-gray-600">
           <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="truncate">{user.teamName || 'No team assigned'}</span>
+          <span className="truncate">{user.teamName ?? 'No team assigned'}</span>
         </div>
       </div>
 
       {/* Footer Section */}
       <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-100">
-        <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium border ${roleColors[user.role] || roleColors.user}`}>
+        <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium border ${roleColors[user.role] ?? roleColors.user}`}>
           {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
         </span>
         <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-500">
@@ -160,9 +168,11 @@ const UsersPage = () => {
               <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-3 sm:px-6 py-3 sm:py-4">
                   <div className="flex items-center space-x-2 sm:space-x-4">
-                    <img
-                      src={user.picUrl || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=e5e7eb&color=374151&size=40`}
+                    <Image
+                      src={user.picUrl ?? `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=e5e7eb&color=374151&size=40`}
                       alt={`${user.firstName} ${user.lastName}`}
+                      width={40}
+                      height={40}
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=e5e7eb&color=374151&size=40`;
@@ -177,15 +187,15 @@ const UsersPage = () => {
                   </div>
                 </td>
                 <td className="px-3 sm:px-6 py-3 sm:py-4">
-                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium border ${roleColors[user.role] || roleColors.user}`}>
+                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium border ${roleColors[user.role] ?? roleColors.user}`}>
                     {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                   </span>
                 </td>
                 <td className="hidden md:table-cell px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">
-                  {user.department || 'N/A'}
+                  {user.department ?? 'N/A'}
                 </td>
                 <td className="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">
-                  {user.locationName || 'N/A'}
+                  {user.locationName ?? 'N/A'}
                 </td>
                 <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
                   {user.points ?? 0}

@@ -1,3 +1,13 @@
+// Define Cloudinary response types
+interface CloudinaryError {
+  message?: string;
+}
+
+interface CloudinaryResponse {
+  secure_url?: string;
+  error?: CloudinaryError;
+}
+
 const ALLOWED_ATTACHMENT_TYPES = [
   'image/jpeg',
   'image/png',
@@ -36,13 +46,13 @@ export async function uploadAttachment(file: File): Promise<string> {
 
   console.log('[uploadAttachment] Cloudinary response status:', res.status);
 
-  const data = await res.json();
+  const data = await res.json() as CloudinaryResponse;
 
   console.log('[uploadAttachment] Cloudinary response data:', data);
 
   if (data.error) {
     console.error('[uploadAttachment] Cloudinary error:', data.error);
-    throw new Error(data.error.message || 'Cloudinary upload failed');
+    throw new Error(data.error.message ?? 'Cloudinary upload failed');
   }
 
   if (!data.secure_url) {
@@ -52,5 +62,5 @@ export async function uploadAttachment(file: File): Promise<string> {
 
   console.log('[uploadAttachment] File uploaded successfully:', data.secure_url);
 
-  return data.secure_url as string;
+  return data.secure_url;
 }

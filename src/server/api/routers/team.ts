@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { getTeamWorkersResponseSchema } from "~/types/responseTypes/teamResponses";
+import { getTeamsResponseSchema, getTeamWorkersResponseSchema } from "~/types/responseTypes/teamResponses";
 
 export const teamsRouter = createTRPCRouter({
     // This procedure fetches all teams
@@ -13,9 +13,11 @@ export const teamsRouter = createTRPCRouter({
                 "Content-Type": "application/json",
             },
         });
-        const json = await res.json();
+        const json = await res.json() as unknown;
         console.log("raw TEAM GET response", json);
-        return json;
+        const validated = getTeamsResponseSchema.parse(json);
+        console.log("validated response", validated);
+        return validated;
     }),
 
 
@@ -31,11 +33,11 @@ export const teamsRouter = createTRPCRouter({
                     "Content-Type": "application/json",
                 },
             });
-            const json = await res.json();
-            console.log("raw response workers", json.data.workers);
-            // const validated = getTeamWorkersResponseSchema.parse(json);
-            // console.log("validated response", validated);
-            return json;
+            const json = await res.json() as unknown;
+            console.log("raw response workers", json);
+            const validated = getTeamWorkersResponseSchema.parse(json);
+            console.log("validated response", validated);
+            return validated;
         }),
 
 
@@ -50,9 +52,8 @@ export const teamsRouter = createTRPCRouter({
                     "Content-Type": "application/json",
                 },
             });
-            const json = await res.json();
+            const json = await res.json() as unknown;
             console.log("raw response", json);
-            console.log("my team workers raw", json.data.workers);
             const validated = getTeamWorkersResponseSchema.parse(json);
             console.log("validated response", validated);
             console.log("my team workers", validated?.data?.workers);

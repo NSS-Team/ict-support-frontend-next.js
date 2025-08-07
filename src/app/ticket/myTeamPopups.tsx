@@ -23,7 +23,7 @@ export default function MyTeamPopup({ open, setOpen, complaintId, assignedWorker
   const [isAssigning, setIsAssigning] = useState(false);
 
   // fetching the team workers
-  const { data: getTeamWorkersResponse, refetch: refetchMyTeamWorkers, isLoading } = api.teams.getWorkersWhileAssignment.useQuery({ complaintId }, { enabled: open });
+  const { data: getTeamWorkersResponse, isLoading } = api.teams.getWorkersWhileAssignment.useQuery({ complaintId }, { enabled: open });
   // api call to assign ticket to multiple workers
   const assignTicketToWorkers = api.complaints.assignComplainToWorkers.useMutation();
   const [workers, setWorkers] = useState<WorkerAssignment[]>([]);
@@ -31,9 +31,7 @@ export default function MyTeamPopup({ open, setOpen, complaintId, assignedWorker
   useEffect(() => {
     if (getTeamWorkersResponse) {
       // Filter out any undefined values before setting state
-      const validWorkers = (getTeamWorkersResponse?.data?.workers || []).filter(
-        (worker : WorkerAssignment): worker is WorkerAssignment => worker !== undefined
-      );
+      const validWorkers = (getTeamWorkersResponse?.data?.workers ?? []).filter((worker) => worker !== undefined) as WorkerAssignment[];
       setWorkers(validWorkers);
     }
   }, [getTeamWorkersResponse]);
@@ -49,9 +47,9 @@ export default function MyTeamPopup({ open, setOpen, complaintId, assignedWorker
   const isWorkerAssigned = (worker: WorkerAssignment): boolean => {
     // Use the isAssignedToThisComplaint property if available, fallback to checking assignedWorkers array
     if (worker.hasOwnProperty('isAssignedToThisComplaint')) {
-      return (worker as any).isAssignedToThisComplaint;
+      return worker.isAssignedToThisComplaint ?? false;
     }
-    return assignedWorkers?.some(assignedWorker => assignedWorker.workerId === worker.workerId) || false;
+    return assignedWorkers?.some(assignedWorker => assignedWorker.workerId === worker.workerId) ?? false;
   };
 
   // Function to check if a worker is currently selected
@@ -71,7 +69,7 @@ export default function MyTeamPopup({ open, setOpen, complaintId, assignedWorker
   };
 
   // Get count of assigned workers
-  const assignedCount = assignedWorkers?.length || 0;
+  const assignedCount = assignedWorkers?.length ?? 0;
 
   // handle assigning multiple workers
   const handleAssignWorkers = async () => {
@@ -228,7 +226,7 @@ export default function MyTeamPopup({ open, setOpen, complaintId, assignedWorker
                     const isBusyAndFar = worker.status === 'busy' && worker.near === false;
                     const canSelect = !isAssigned && !isBusyAndFar;
                     const isRecommended = isBusyButNear;
-                    const queueCount = (worker as any).queueCount;
+                    const queueCount = worker.queueCount ?? 0;
                     
                     // Create a highly unique key using mode, complaintId, and workerId to prevent conflicts
                     const uniqueKey = `${mode}-complaint-${complaintId}-worker-${worker.workerId}-idx-${index}`;
@@ -356,9 +354,9 @@ export default function MyTeamPopup({ open, setOpen, complaintId, assignedWorker
                                   <span className="text-xs text-slate-400 hidden sm:inline">Queue:</span>
                                   <span className="text-xs text-slate-400 sm:hidden">Q:</span>
                                   <span className={`px-1 sm:px-1.5 py-0.5 rounded text-xs font-medium ${
-                                    parseInt(queueCount) > 2 
+                                    queueCount > 2 
                                       ? 'bg-red-100 text-red-700' 
-                                      : parseInt(queueCount) > 1 
+                                      : queueCount > 1 
                                       ? 'bg-orange-100 text-orange-700'
                                       : 'bg-green-100 text-green-700'
                                   }`}>

@@ -121,9 +121,9 @@ const NotificationsComponent = () => {
     if (!rawData) return;
 
     const rawNotifications = rawData.notifications || [];
-    const transformed: Notification[] = (rawNotifications as Notification[]).map((notif: Notification): Notification => ({
+    const transformed: Notification[] = (rawNotifications).map((notif: Notification): Notification => ({
       ...notif,
-      read: notif.read ?? false,
+      isRead: notif.isRead ?? false,
     }));
 
     if (transformed.length > 0) {
@@ -141,7 +141,7 @@ const NotificationsComponent = () => {
     }
   }, [getNotificationsResponse]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   // Click outside handler
   useEffect(() => {
@@ -290,7 +290,7 @@ const NotificationsComponent = () => {
                 <div className="px-4 py-12 sm:py-8 text-center text-gray-500">
                   <Bell className="w-12 h-12 sm:w-8 sm:h-8 text-gray-300 mx-auto mb-3 sm:mb-2" />
                   <p className="text-base sm:text-sm font-medium mb-1">No notifications</p>
-                  <p className="text-sm sm:text-xs text-gray-400">You're all caught up!</p>
+                  <p className="text-sm sm:text-xs text-gray-400">You&apos;re all caught up!</p>
                   <p className="text-xs text-gray-400 mt-2 sm:hidden">Swipe down to close</p>
                 </div>
               ) : (
@@ -299,14 +299,14 @@ const NotificationsComponent = () => {
                     <div
                       key={notification.id}
                       className={`px-4 py-4 sm:py-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-150 border-l-4 ${
-                        !notification.read 
+                        !notification.isRead 
                           ? 'bg-blue-50/30 border-l-blue-500' 
                           : 'border-l-transparent'
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         {/* Notification dot */}
-                        {!notification.read && (
+                        {!notification.isRead && (
                           <div className="w-2 h-2 sm:w-1.5 sm:h-1.5 bg-blue-500 rounded-full mt-2 sm:mt-1.5 flex-shrink-0" />
                         )}
                         
@@ -314,7 +314,7 @@ const NotificationsComponent = () => {
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <p className={`text-base sm:text-sm font-medium leading-5 ${
-                                !notification.read ? 'text-gray-900' : 'text-gray-700'
+                                !notification.isRead ? 'text-gray-900' : 'text-gray-700'
                               }`}>
                                 New Notification
                               </p>

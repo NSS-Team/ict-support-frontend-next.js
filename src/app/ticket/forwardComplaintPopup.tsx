@@ -22,7 +22,7 @@ export default function ForwardTeamPopup({ open, setOpen, complainId, MyTeamId }
   const { data: getTeamsResponse, refetch: refetchTeams, isLoading: teamsLoading, isError: getTeamsError } = api.teams.getTeams.useQuery(undefined, {
     enabled: open, // Only fetch when the popup is open
   });
-  const teams = getTeamsResponse?.data?.teams || [];
+  const teams = getTeamsResponse?.data?.teams ?? [];
 
   // api that triggers when forward complaint button is clicked
   const forwardComplaint = api.complaints.forwardComplainToTeam.useMutation({
@@ -111,9 +111,10 @@ export default function ForwardTeamPopup({ open, setOpen, complainId, MyTeamId }
             ) : (
               <>
                 <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar mb-6">
-                  {/* if the team id is not equal to the user's team id, show the team */}
-                  {teams.map((team: Team, index: number) => (
-                    team.id !== MyTeamId && (
+                  {/* Only show teams not equal to the user's team id */}
+                  {(teams as Team[])
+                    .filter((team: Team) => team.id !== MyTeamId)
+                    .map((team: Team, index: number) => (
                       <div
                         key={team.id}
                         onClick={() => setSelectedTeam(selectedTeam?.id === team.id ? null : team)}
@@ -160,8 +161,8 @@ export default function ForwardTeamPopup({ open, setOpen, complainId, MyTeamId }
                             <div className="w-full h-full rounded-full bg-white scale-50"></div>
                           )}
                         </div>
-                      </div>)
-                  ))}
+                      </div>
+                    ))}
                 </div>
 
                 {/* Message Field */}

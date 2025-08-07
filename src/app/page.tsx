@@ -1,19 +1,16 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, SignIn } from '@clerk/nextjs';
 import Loader from '~/app/_components/Loader';
 import { api } from '~/trpc/react';
 import { useUserStatus } from '~/store/loginCheck';
-import type { UserRoles } from '~/types/enums';
-import CustomAuthForm from './_components/auth/AuthModal';
 
 
 export default function Home() {
 
   // Zustand store for login check
   const { setExist, setApproved } = useUserStatus();
-  const [role, setRole] = useState<UserRoles | undefined>();
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
 
@@ -24,7 +21,6 @@ export default function Home() {
     
     if (data?.success) {
       const role = responseData?.role;
-      setRole(role);
       if (responseData) {
         // if exists and not approved, redirect to complete profile
         if (!responseData.exist) {
@@ -61,7 +57,7 @@ export default function Home() {
         }
       }
     }
-  }, [data, responseData, router]);
+  }, [data, responseData, router, setApproved, setExist]);
 
 
 

@@ -14,7 +14,7 @@ export const StatCard = ({ label, value, icon, color = 'text-slate-900' }: { lab
   </div>
 );
 
-export const InfoBlock = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string }) => (
+export const InfoBlock = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string }) => (
   value ? (
     <div className="flex items-center gap-2">
       <Icon className="w-4 h-4 text-slate-400" />

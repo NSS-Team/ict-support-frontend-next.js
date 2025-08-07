@@ -12,6 +12,7 @@ import { useUserStatus } from '~/store/loginCheck';
 import { uploadProfileImage } from '~/utils/UploadProfileImage';
 import { UploadCloud, User, CheckCircle, ArrowRight } from "lucide-react";
 import Loader from '../Loader';
+import Image from 'next/image';
 
 interface Props {
   initialUser: NustEmployee;
@@ -26,7 +27,7 @@ const RegularUserForm = ({ initialUser, onSwitch }: Props) => {
   const [formData, setFormData] = useState<Partial<NustEmployee>>(initialUser);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({}); 
+  const [errors, setErrors] = useState<Record<string, string>>({}); 
   const [submitted, setSubmitted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -64,7 +65,7 @@ const RegularUserForm = ({ initialUser, onSwitch }: Props) => {
   };
 
   const validateStep = () => {
-    const newErrors: { [key: string]: string } = {};
+    const newErrors: Record<string, string> = {};
     requiredFields.forEach((field) => {
       if (!formData[field] || formData[field]?.toString().trim() === '') {
         newErrors[field] = `${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
@@ -137,7 +138,7 @@ const RegularUserForm = ({ initialUser, onSwitch }: Props) => {
           </div>
           <h3 className="text-2xl font-semibold text-gray-900 mb-2">Profile Submitted!</h3>
           <p className="text-gray-600 mb-4">
-            Your profile has been submitted for approval. You'll receive a notification once it's reviewed.
+            Your profile has been submitted for approval. You&apos;ll receive a notification once it&apos;s reviewed.
           </p>
           <div className="w-full bg-green-200 rounded-full h-2">
             <div className="bg-green-600 h-2 rounded-full w-full"></div>
@@ -182,7 +183,7 @@ const RegularUserForm = ({ initialUser, onSwitch }: Props) => {
               <div className="relative">
                 <div className="w-24 h-24 rounded-2xl bg-gray-100 border border-gray-300 flex items-center justify-center overflow-hidden">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    <Image width= '48' height = '48' src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-8 h-8 text-gray-400" />
                   )}
@@ -212,17 +213,17 @@ const RegularUserForm = ({ initialUser, onSwitch }: Props) => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <div className="space-y-6">
               <label className="block text-sm font-semibold text-gray-700 mb-2">Personal Information</label>
-              <InputField label="First Name" name="firstName" value={formData.firstName || ''} onChange={handleChange} error={errors.firstName} disabled={isLoading} />
-              <InputField label="Last Name" name="lastName" value={formData.lastName || ''} onChange={handleChange} error={errors.lastName} disabled={isLoading} />
-              <InputField label="Phone Number" name="phone" value={formData.phone || ''} onChange={handleChange} error={errors.phone} disabled={isLoading} />
+              <InputField label="First Name" name="firstName" value={formData.firstName ?? ''} onChange={handleChange} error={errors.firstName} disabled={isLoading} />
+              <InputField label="Last Name" name="lastName" value={formData.lastName ?? ''} onChange={handleChange} error={errors.lastName} disabled={isLoading} />
+              <InputField label="Phone Number" name="phone" value={formData.phone ?? ''} onChange={handleChange} error={errors.phone} disabled={isLoading} />
             </div>
 
             <div className="space-y-6">
               <label className="block text-sm font-semibold text-gray-700 mb-2">Professional Information</label>
-              <SelectField label="Location" name="locationId" options={locationOptions} value={formData.locationId || ''} onChange={handleChange} error={errors.locationId} disabled={isLoading} />
-              <InputField label="Department" name="department" value={formData.department || ''} onChange={handleChange} disabled={isLoading} />
-              <InputField label="Designation" name="designation" value={formData.designation || ''} onChange={handleChange} error={errors.designation} disabled={isLoading} />
-              <InputField label="Office Room Number" name="officeNumber" value={formData.officeNumber || ''} onChange={handleChange} disabled={isLoading} />
+              <SelectField label="Location" name="locationId" options={locationOptions} value={formData.locationId ?? ''} onChange={handleChange} error={errors.locationId} disabled={isLoading} />
+              <InputField label="Department" name="department" value={formData.department ?? ''} onChange={handleChange} disabled={isLoading} />
+              <InputField label="Designation" name="designation" value={formData.designation ?? ''} onChange={handleChange} error={errors.designation} disabled={isLoading} />
+              <InputField label="Office Room Number" name="officeNumber" value={formData.officeNumber ?? ''} onChange={handleChange} disabled={isLoading} />
             </div>
           </div>
 
@@ -250,7 +251,7 @@ const RegularUserForm = ({ initialUser, onSwitch }: Props) => {
           {/* Help Text */}
           <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
             <p className="text-sm text-blue-700">
-              <strong>Note:</strong> Your profile will be reviewed by our team. You'll receive an email notification once it's approved.
+              <strong>Note:</strong> Your profile will be reviewed by our team. You&apos;ll receive an email notification once it&apos;s approved.
             </p>
           </div>
         </div>

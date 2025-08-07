@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, Users, UserPlus, UserCircle, LogOut, Plus, Menu, X ,TrendingUp} from 'lucide-react';
+import { Home, Users, UserPlus, UserCircle, Plus, Menu, X ,TrendingUp} from 'lucide-react';
 import '~/styles/globals.css';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -16,7 +16,7 @@ const Sidebar = () => {
       ? user.publicMetadata.role
       : 'user';
   // const userRoles = userRolesEnum.options;
-  const userApproved = user?.publicMetadata?.approved;
+  // const userApproved = user?.publicMetadata?.approved;
 
   const navItems = [
     

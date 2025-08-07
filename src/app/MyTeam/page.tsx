@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '~/trpc/react';
+import Image from 'next/image';
 import {
-  Users, UserCheck, Mail, Phone, Calendar, MapPin, Badge,
-  ChevronDown, ChevronUp, Clock, Building, User, Award, Star,
+  Users, UserCheck, Mail, Phone, Calendar, Badge,
+  ChevronDown, ChevronUp, Clock, User, Award, Star,
   TrendingUp, Target, BarChart3
 } from 'lucide-react';
 import type { TeamWorker } from '~/types/teams/teamWorker';
@@ -16,8 +17,10 @@ import LoginRequired from '../_components/unauthorized/loginToContinue';
 export default function MyTeamPage() {
 
   const { isLoaded, isSignedIn, user } = useUser();
-  const userRole = user?.publicMetadata?.role || 'user';
-  const MyTeam = user?.publicMetadata?.teamName || 'My Team';
+  const userRole = user?.publicMetadata?.role ?? 'user';
+  const MyTeam: string = typeof user?.publicMetadata?.teamName === 'string'
+    ? user.publicMetadata.teamName
+    : 'My Team';
   const [expandedMember, setExpandedMember] = useState<number | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [workers, setWorkers] = useState<TeamWorker[]>([]);
@@ -33,7 +36,7 @@ export default function MyTeamPage() {
 
   useEffect(() => {
     if (getTeamWorkersResponse) {
-      setWorkers((getTeamWorkersResponse?.data?.workers || []).filter((w): w is TeamWorker => w !== undefined));
+      setWorkers((getTeamWorkersResponse?.data?.workers ?? []).filter((w): w is TeamWorker => w !== undefined));
     }
   }, [getTeamWorkersResponse]);
 
@@ -56,7 +59,7 @@ export default function MyTeamPage() {
       employee: 'bg-gray-100 text-gray-800 border-gray-200',
       worker: 'bg-orange-100 text-orange-800 border-orange-200'
     };
-    return colors[role as keyof typeof colors] || colors.employee;
+    return colors[role as keyof typeof colors] ?? colors.employee;
   };
 
   // Professional points styling
@@ -122,7 +125,7 @@ export default function MyTeamPage() {
     return ((firstInitial ?? '') + (lastInitial ?? '')).toUpperCase();
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: (Date)) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -157,7 +160,7 @@ export default function MyTeamPage() {
   }
 
   // Get role statistics
-  const roleStats = workers.reduce((acc, worker) => {
+  const roleStats = workers.reduce((acc) => {
     acc.total = workers.length;
     acc.active = workers.filter(w => w.status === 'active').length;
     return acc;
@@ -165,7 +168,7 @@ export default function MyTeamPage() {
 
   // Calculate points statistics
   const pointsStats = workers.reduce((acc, worker) => {
-    const points = worker.Points || 0;
+    const points = worker.Points ?? 0;
     acc.totalPoints += points;
     acc.averagePoints = workers.length > 0 ? Math.round(acc.totalPoints / workers.length) : 0;
     acc.highestPoints = Math.max(acc.highestPoints, points);
@@ -183,7 +186,7 @@ export default function MyTeamPage() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Team</h1>
-              <h2 className="text-1xl sm:text-2xl text-gray-500">{String(MyTeam)}</h2>
+              <h2 className="text-1xl sm:text-2xl text-gray-500">{MyTeam}</h2>
               {userRole === 'manager' && <p className="text-gray-500 mt-1">Manage and view your team members</p>}
             </div>
           </div>
@@ -231,7 +234,7 @@ export default function MyTeamPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 bg-yellow-100 p-3 rounded-lg border border-yellow-300">
                   <h3 className="font-medium text-yellow-800">Manager - </h3>
-                  <h3 className="font-medium text-gray-900 truncate">{getTeamWorkersResponse?.data?.manager?.managerName || 'N/A'}</h3>
+                  <h3 className="font-medium text-gray-900 truncate">{getTeamWorkersResponse?.data?.manager?.managerName ?? 'N/A'}</h3>
                 </div>
               </div>
             )}
@@ -247,7 +250,7 @@ export default function MyTeamPage() {
             ) : (
               <div className="space-y-3">
                 {workers.map(member => {
-                  const points = member.Points || 0;
+                  const points = member.Points ?? 0;
                   const performance = getPerformanceLevel(points);
                   const compactDisplay = getCompactPointsDisplay(points);
                   
@@ -267,9 +270,11 @@ export default function MyTeamPage() {
                       >
                         <div className="relative shrink-0">
                           {userInfo?.data?.picUrl && expandedMember === member.workerId ? (
-                            <img
+                            <Image
                               src={userInfo.data.picUrl}
                               alt={member.workerName}
+                              width={48}
+                              height={48}
                               className="w-12 h-12 rounded-xl object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
@@ -279,7 +284,7 @@ export default function MyTeamPage() {
                           ) : (
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
                               <span className="text-blue-600 font-semibold text-sm">
-                                {getInitials(member.workerName.split(' ')[0] || '', member.workerName.split(' ')[1] || '')}
+                                {getInitials(member.workerName.split(' ')[0] ?? '', member.workerName.split(' ')[1] ?? '')}
                               </span>
                             </div>
                           )}
@@ -402,7 +407,7 @@ export default function MyTeamPage() {
                                 <InfoBlock
                                   icon={Phone}
                                   label="Phone"
-                                  value={userInfo.data.phone || 'Not provided'}
+                                  value={userInfo.data.phone ?? 'Not provided'}
                                 />
                                 <InfoBlock
                                   icon={Badge}
@@ -412,12 +417,12 @@ export default function MyTeamPage() {
                                 <InfoBlock
                                   icon={Calendar}
                                   label="Joined"
-                                  value={formatDate(userInfo.data.createdAt)}
+                                  value={formatDate(new Date(userInfo.data.createdAt))}
                                 />
                                 <InfoBlock
                                   icon={Clock}
                                   label="Last Updated"
-                                  value={formatLastUpdated(userInfo.data.updatedAt)}
+                                  value={formatLastUpdated(new Date(userInfo.data.updatedAt))}
                                 />
                                 <InfoBlock
                                   icon={TrendingUp}

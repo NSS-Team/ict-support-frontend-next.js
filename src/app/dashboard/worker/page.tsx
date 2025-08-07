@@ -1,7 +1,7 @@
 'use client'
 
 import { useSecurityCodes } from "~/hooks/securityCodes";
-import React, { useState } from "react";
+import React from "react";
 import '~/styles/globals.css';
 import Loader from '~/app/_components/Loader';
 import { api } from '~/trpc/react';
@@ -13,7 +13,7 @@ import Unauthorized from "~/app/_components/unauthorized/unauthorized";
 import ErrorLoading from "~/app/_components/unauthorized/errorLoading";
 
 export default function WorkerPage() {
-  const { showModal, setShowModal, isError, codes, retry, userLoaded,
+  const { showModal, setShowModal, isError, codes, retry,
   } = useSecurityCodes();
   
 //   calling the login-check api to verify if the user is logged in and has the right permissions

@@ -4,9 +4,9 @@
 
 import Ticket from "./Ticket";
 import TicketCategoryTabs from "./TicketFilterBar";
-import type { employeeticket, ticket } from "~/types/tickets/ticket";
+import type { ticket } from "~/types/tickets/ticket";
 import TicketSkeleton from "./TicketSkeletonLoading";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
 import { useUser } from '@clerk/nextjs';
 
@@ -23,9 +23,9 @@ interface FilterState {
 }
 
 const TicketsOnDash = ({ tickets, isLoading}: TicketsOnDashProps) => {
-    const Router = useRouter();
+    // const Router = useRouter();
     const { user } = useUser();
-    const role = user?.publicMetadata?.role || 'guest';
+    const role = user?.publicMetadata?.role ?? 'guest';
     
     // Filter state management
     const [filters, setFilters] = useState<FilterState>({
@@ -193,7 +193,7 @@ const TicketsOnDash = ({ tickets, isLoading}: TicketsOnDashProps) => {
 
             {/* if the data has been loaded then we will map that array to ticket */}
             {!isLoading && (filteredTickets?.length ?? 0) > 0 ? (
-                filteredTickets!.map((ticket, index) => {
+                filteredTickets.map((ticket, index) => {
                     // Determine if this is a priority ticket
                     const isPriorityTicket = (
                         (role === 'worker' && ticket.status === 'in_queue') ||

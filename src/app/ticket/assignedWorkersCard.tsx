@@ -4,6 +4,7 @@
 // it shows the first worker and a dropdown for all assigned workers
 import { useState } from 'react';
 import { User, AlertTriangle } from 'lucide-react';
+import Image from 'next/image';
 import type { WorkerComplaintStatus } from '~/types/enums';
 
 interface AssignedWorker {
@@ -43,20 +44,22 @@ export default function AssignedWorkersCard({ assignedWorkers }: AssignedWorkers
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
                       {assignedWorkers[0]?.picUrl ? (
-                        <img 
+                        <Image 
                           src={assignedWorkers[0].picUrl} 
                           alt={assignedWorkers[0]?.workerName || 'Worker'} 
+                          width={32}
+                          height={32}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
-                          {assignedWorkers[0]?.workerName?.charAt(0)?.toUpperCase() || 'U'}
+                          {assignedWorkers[0]?.workerName?.charAt(0)?.toUpperCase() ?? 'U'}
                         </div>
                       )}
                     </div>
                     <div className="text-left">
                       <p className="text-base font-semibold text-gray-900">
-                        {assignedWorkers[0]?.workerName || 'Unknown'}
+                        {assignedWorkers[0]?.workerName ?? 'Unknown'}
                       </p>
                       <div className="flex items-center gap-2">
                         {/* Status indicator for the first worker */}
@@ -105,9 +108,11 @@ export default function AssignedWorkersCard({ assignedWorkers }: AssignedWorkers
                         <div key={worker.workerId || index} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-md transition-colors">
                           <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
                             {worker.picUrl ? (
-                              <img 
+                              <Image 
                                 src={worker.picUrl} 
                                 alt={worker.workerName || 'Worker'} 
+                                width={28}
+                                height={28}
                                 className="w-full h-full object-cover"
                               />
                             ) : (

@@ -6,7 +6,7 @@ export const NotificationSchema = z.object({
     message: z.string(),
     status: z.string().nullable(),
     createdAt: z.string(),
-    read: z.boolean(),
+    isRead: z.boolean(),
 });
 
 export type Notification = z.infer<typeof NotificationSchema>;

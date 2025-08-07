@@ -16,20 +16,8 @@ import LoginRequired from '~/app/_components/unauthorized/loginToContinue';
 export default function ComplaintForm() {
   const router = useRouter();
   const {addToast} = useToast();
-  const { user, isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
 
-  // below ifs are used for loading state and user verification
-      if (!isLoaded) {
-      return <div className="flex min-h-screen items-center justify-center">
-        <Loader />
-        <p className="text-gray-500 pl-5">Please wait, while we authorize you...</p>
-      </div>;
-      }
-      if(isLoaded && !isSignedIn) {
-          return <LoginRequired />;
-      }
-
-  
   type Upload = { file: File; note: string; type: string };
   type FormState = {
     title: string;
@@ -61,24 +49,19 @@ export default function ComplaintForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categoriesResponse, isLoading: categoriesLoading } = api.complaints.getCategories.useQuery();
-  const categories = categoriesResponse?.data?.categories || [];
+  const categories = categoriesResponse?.data?.categories ?? [];
   
   const { data: subcategories, isLoading: subcategoriesLoading } = api.complaints.getSubCategories.useQuery(
     { categoryId: form.categoryId },
     { enabled: !!form.categoryId }
   );
-  const subCategories = subcategories?.data?.subCategories || [];
-  
+  const subCategories = subcategories?.data?.subCategories ?? [];
+
   const { data: issues, isLoading: issuesLoading } = api.complaints.getIssueOptions.useQuery(
     { subCategoryId: form.subCategoryId },
     { enabled: !!form.subCategoryId }
   );
-  const issueOptions = issues?.data?.issueOptions || [];
-
-  const handleBack = () => {
-    router.back();
-    router.refresh();
-  };
+  const issueOptions = issues?.data?.issueOptions ?? [];
 
   // api call for the complaint generation
   const generateComplain = api.complaints.generateComplain.useMutation({
@@ -92,7 +75,31 @@ export default function ComplaintForm() {
     },
   });
 
-  const handleChange = (key: string, value: any) => {
+  // Reset loading state when mutation completes
+  useEffect(() => {
+    if (!generateComplain.isPending) {
+      setIsUploading(false);
+      setUploadProgress('');
+    }
+  }, [generateComplain.isPending]);
+
+  // Authentication checks - after all hooks
+  if (!isLoaded) {
+    return <div className="flex min-h-screen items-center justify-center">
+      <Loader />
+      <p className="text-gray-500 pl-5">Please wait, while we authorize you...</p>
+    </div>;
+  }
+  if(isLoaded && !isSignedIn) {
+    return <LoginRequired />;
+  }
+
+  const handleBack = () => {
+    router.back();
+    router.refresh();
+  };
+
+  const handleChange = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -199,23 +206,16 @@ export default function ComplaintForm() {
         device: form.device,
         uploads: uploadsWithUrls,
       });
-    } catch (error : any) {
-      addToast('Error during submission: ' + error.message, 'error');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      addToast('Error during submission: ' + errorMessage, 'error');
       setIsUploading(false);
       setUploadProgress('');
     }
   };
 
-  // Reset loading state when mutation completes
-  useEffect(() => {
-  if (!generateComplain.isPending) {
-    setIsUploading(false);
-    setUploadProgress('');
-  }
-}, [generateComplain.isPending]);
-
   const isOther: boolean =
-    issueOptions?.find((i: IssueOption) => i.id.toString() === form.issueOptionId)?.name === 'Other (specify)';
+    issueOptions.find((i: IssueOption) => i.id.toString() === form.issueOptionId)?.name === 'Other (specify)';
 
   const isSubmitting = generateComplain.isPending || isUploading;
 
@@ -232,7 +232,7 @@ export default function ComplaintForm() {
                 {uploadProgress || 'Processing your request...'}
               </h3>
               <p className="text-sm text-gray-600">
-                Please don't close this window. This may take a few moments.
+                Please don&apos;t close this window. This may take a few moments.
               </p>
               {form.uploads.length > 0 && (
                 <div className="mt-4 bg-gray-100 rounded-lg p-3">
@@ -308,7 +308,7 @@ export default function ComplaintForm() {
                     <option value="">
                       {categoriesLoading ? 'Loading categories...' : 'Select category'}
                     </option>
-                    {categories?.map((cat) =>
+                    {categories.map((cat) =>
                       cat ? (
                         <option key={cat.id} value={cat.id}>
                           {cat.name}
@@ -338,7 +338,7 @@ export default function ComplaintForm() {
                     <option value="">
                       {subcategoriesLoading ? 'Loading subcategories...' : 'Select subcategory'}
                     </option>
-                    {subCategories?.map((sub: SubCategory) => (
+                    {subCategories.map((sub: SubCategory) => (
                       <option key={sub.id} value={sub.id}>
                         {sub.name}
                       </option>
@@ -363,7 +363,7 @@ export default function ComplaintForm() {
                     <option value="">
                       {issuesLoading ? 'Loading issues...' : 'Select issue'}
                     </option>
-                    {issueOptions?.map((issue: IssueOption) => (
+                    {issueOptions.map((issue: IssueOption) => (
                       <option key={issue.id} value={issue.id}>
                         {issue.name}
                       </option>
@@ -499,7 +499,7 @@ export default function ComplaintForm() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                   <p className="text-lg font-medium text-gray-700 mb-2">Drop files here to upload</p>
-                  <p className="text-sm text-gray-500 mb-4">or click "Browse Files" to select from your device</p>
+                  <p className="text-sm text-gray-500 mb-4">or click &quot;Browse Files&quot; to select from your device</p>
                   <p className="text-xs text-gray-400">Supports: Images, Documents, Videos, Log Files (Max 10MB each)</p>
                 </div>
               </div>

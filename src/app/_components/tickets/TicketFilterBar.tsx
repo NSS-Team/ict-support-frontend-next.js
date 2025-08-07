@@ -3,7 +3,18 @@
 import { useState } from 'react';
 import { Search, Filter, X, ChevronDown } from 'lucide-react';
 
-const TicketFilterBar = ({ onFiltersChange }: { onFiltersChange?: (filters: any) => void }) => {
+interface TicketFilters {
+  priority: string;
+  status: string;
+  date: string;
+  search: string;
+}
+
+interface TicketFilterBarProps {
+  onFiltersChange?: (filters: TicketFilters) => void;
+}
+
+const TicketFilterBar = ({ onFiltersChange }: TicketFilterBarProps) => {
   const [filters, setFilters] = useState({
     priority: '',
     status: '',
@@ -214,8 +225,8 @@ const TicketFilterBar = ({ onFiltersChange }: { onFiltersChange?: (filters: any)
                 )}
                 {filters.search && (
                   <span className="inline-flex items-center space-x-1 px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                    <span className="hidden sm:inline">Search: "{filters.search}"</span>
-                    <span className="inline sm:hidden">"{filters.search.length > 10 ? filters.search.substring(0, 10) + '...' : filters.search}"</span>
+                    <span className="hidden sm:inline">Search: &quot;{filters.search}&quot;</span>
+                    <span className="inline sm:hidden">&quot;{filters.search.length > 10 ? filters.search.substring(0, 10) + '...' : filters.search}&quot;</span>
                     <button
                       onClick={() => handleFilterChange('search', '')}
                       className="ml-1 hover:bg-blue-100 rounded-full p-0.5 touch-manipulation"

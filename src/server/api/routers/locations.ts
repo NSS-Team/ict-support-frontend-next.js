@@ -10,7 +10,7 @@ export const locationsRouter = createTRPCRouter({
       },
     });
 
-    const json = await res.json();
+    const json = await res.json() as unknown;
     const validated = getLocationsResponseSchema.parse(json);
     console.log('getLocations response:', validated);
     return validated;

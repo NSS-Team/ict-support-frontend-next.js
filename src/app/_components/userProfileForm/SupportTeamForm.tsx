@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { UploadCloud, Users, CheckCircle, ArrowRight, Shield } from 'lucide-react';
 import { uploadProfileImage } from '~/utils/UploadProfileImage';
 import { useToast } from '../ToastProvider';
-import Loader from '../Loader';
+import Loader from '../Loader'; import Image from 'next/image';
 
 interface Props {
   initialUser: SupportStaffMember;
@@ -19,7 +19,7 @@ interface Props {
   onSwitch: () => void;
 }
 
-const SupportTeamForm = ({ initialUser, roleOptions, onSubmit, onSwitch }: Props) => {
+const SupportTeamForm = ({ initialUser, roleOptions, onSwitch }: Props) => {
   const { addToast } = useToast();
   const { setExist, setApproved } = useUserStatus();
   const Router = useRouter();
@@ -27,7 +27,7 @@ const SupportTeamForm = ({ initialUser, roleOptions, onSubmit, onSwitch }: Props
   const [formData, setFormData] = useState<Partial<SupportStaffMember>>(initialUser);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -65,7 +65,7 @@ const SupportTeamForm = ({ initialUser, roleOptions, onSubmit, onSwitch }: Props
   };
 
   const validate = () => {
-    const newErrors: { [key: string]: string } = {};
+    const newErrors: Record<string, string>= {};
     (['firstName', 'lastName', 'phone', 'role', 'teamId'] as (keyof SupportStaffMember)[]).forEach((field) => {
       if (!formData[field]) {
         const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
@@ -109,8 +109,8 @@ const SupportTeamForm = ({ initialUser, roleOptions, onSubmit, onSwitch }: Props
         lastName: formData.lastName,
         email,
         phone: formData.phone,
-        role: formData.role || '',
-        teamId: formData.teamId || '',
+        role: formData.role ?? '',
+        teamId: formData.teamId ?? '',
         picUrl: imageUrl,
       });
       addToast('Profile completed successfully!');
@@ -120,6 +120,11 @@ const SupportTeamForm = ({ initialUser, roleOptions, onSubmit, onSwitch }: Props
     }
   };
 
+
+    // Add a no-op handler for disabled fields
+  const handleDisabledChange = () => {
+    // No operation for disabled fields
+  };
   const isLoading = isSubmitting || isUploading || isTeamLoading;
 
   if (submitted) {
@@ -173,7 +178,7 @@ const SupportTeamForm = ({ initialUser, roleOptions, onSubmit, onSwitch }: Props
               <div className="relative">
                 <div className="w-24 h-24 rounded-xl bg-gray-100 border border-gray-300 flex items-center justify-center overflow-hidden">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    <Image width='48' height='48' src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
                     <Users className="w-8 h-8 text-gray-400" />
                   )}
@@ -211,9 +216,9 @@ const SupportTeamForm = ({ initialUser, roleOptions, onSubmit, onSwitch }: Props
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Personal Information</label>
                 <div className="space-y-4">
-                  <InputField label="First Name" name="firstName" value={formData.firstName || ''} onChange={handleChange} error={errors.firstName} disabled={isLoading} />
-                  <InputField label="Last Name" name="lastName" value={formData.lastName || ''} onChange={handleChange} error={errors.lastName} disabled={isLoading} />
-                  <InputField label="Phone Number" name="phone" value={formData.phone || ''} onChange={handleChange} error={errors.phone} disabled={isLoading} />
+                  <InputField label="First Name" name="firstName" value={formData.firstName ?? ''} onChange={handleChange} error={errors.firstName} disabled={isLoading} />
+                  <InputField label="Last Name" name="lastName" value={formData.lastName ?? ''} onChange={handleChange} error={errors.lastName} disabled={isLoading} />
+                  <InputField label="Phone Number" name="phone" value={formData.phone ?? ''} onChange={handleChange} error={errors.phone} disabled={isLoading} />
                 </div>
               </div>
             </div>
@@ -226,13 +231,13 @@ const SupportTeamForm = ({ initialUser, roleOptions, onSubmit, onSwitch }: Props
                     label="Role"
                     name="role"
                     options={roleOptions.map((r) => ({ id: r, name: r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }))}
-                    value={formData.role || ''}
+                    value={formData.role ?? ''}
                     onChange={handleChange}
                     error={errors.role}
                     disabled={isLoading}
                   />
-                  <SelectField label="Team" name="teamId" options={teamOptions} value={formData.teamId || ''} onChange={handleChange} error={errors.teamId} disabled={isLoading || isTeamLoading} />
-                  <InputField label="Department" name="department" value="ICT OFFICE" onChange={() => { }} disabled />
+                  <SelectField label="Team" name="teamId" options={teamOptions} value={formData.teamId ?? ''} onChange={handleChange} error={errors.teamId} disabled={isLoading || isTeamLoading} />
+                  <InputField label="Department" name="department" value="ICT OFFICE" disabled onChange={handleDisabledChange} />
                 </div>
               </div>
             </div>
@@ -274,7 +279,7 @@ const SupportTeamForm = ({ initialUser, roleOptions, onSubmit, onSwitch }: Props
               <div>
                 <p className="text-sm text-emerald-700 font-medium mb-1">Support Team Benefits</p>
                 <p className="text-sm text-emerald-600">
-                  As a support team member, you'll have access to advanced tools and the ability to help other users resolve their issues quickly and efficiently.
+                  As a support team member, you&apos;ll have access to advanced tools and the ability to help other users resolve their issues quickly and efficiently.
                 </p>
               </div>
             </div>

@@ -1,3 +1,13 @@
+// Define Cloudinary response types
+interface CloudinaryError {
+  message?: string;
+}
+
+interface CloudinaryResponse {
+  secure_url?: string;
+  error?: CloudinaryError;
+}
+
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
 
 export async function uploadProfileImage(file: File): Promise<string> {
@@ -23,13 +33,13 @@ export async function uploadProfileImage(file: File): Promise<string> {
 
   console.log('[uploadProfileImage] Cloudinary response status:', res.status);
 
-  const data = await res.json();
+  const data = await res.json() as CloudinaryResponse;
 
   console.log('[uploadProfileImage] Cloudinary response data:', data);
 
   if (data.error) {
     console.error('[uploadProfileImage] Cloudinary error:', data.error);
-    throw new Error(data.error.message || 'Cloudinary upload failed');
+    throw new Error(data.error.message ?? 'Cloudinary upload failed');
   }
 
   if (!data.secure_url) {
@@ -39,5 +49,5 @@ export async function uploadProfileImage(file: File): Promise<string> {
 
   console.log('[uploadProfileImage] Image uploaded successfully:', data.secure_url);
 
-  return data.secure_url as string;
+  return data.secure_url;
 }
