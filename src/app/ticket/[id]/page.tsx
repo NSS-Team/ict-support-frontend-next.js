@@ -84,7 +84,7 @@ export default function TicketDetailPage() {
 
   // api call to add a worker to the existing assignment of ticket
   const {
-    mutate: addWorkerToAssignment,
+    mutate: _addWorkerToAssignment,
     isPending: isAddingWorker,
     isSuccess: isAddWorkerSuccess,
     isError: isAddWorkerError,

@@ -16,10 +16,10 @@ interface ForwardTeamPopupProps {
 
 export default function ForwardTeamPopup({ open, setOpen, complainId, MyTeamId }: ForwardTeamPopupProps) {
 
-  const {addToast} = useToast();
+  const {addToast: _addToast} = useToast();
 
   // fetching the teams api
-  const { data: getTeamsResponse, refetch: refetchTeams, isLoading: teamsLoading, isError: getTeamsError } = api.teams.getTeams.useQuery(undefined, {
+  const { data: getTeamsResponse, refetch: _refetchTeams, isLoading: teamsLoading, isError: getTeamsError } = api.teams.getTeams.useQuery(undefined, {
     enabled: open, // Only fetch when the popup is open
   });
   const teams = getTeamsResponse?.data?.teams ?? [];
