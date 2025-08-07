@@ -1,15 +1,12 @@
 'use client';
 
-import { Home, Users, UserPlus, UserCircle, LogOut, Plus, Menu, X } from 'lucide-react';
+import { Home, Users, UserPlus, UserCircle, LogOut, Plus, Menu, X ,TrendingUp} from 'lucide-react';
 import '~/styles/globals.css';
-import { useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { userRolesEnum } from '~/types/enums';
 import { useState } from 'react';
 
 const Sidebar = () => {
-  const { signOut } = useClerk();
   const router = useRouter();
   const { user } = useUser();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -24,6 +21,17 @@ const Sidebar = () => {
   const navItems = [
     {
       name: 'New Complaint',
+      icon: TrendingUp,
+      color: 'green',
+      size: 20,
+      onClick: () => {
+        router.push('/dashboard/admin/summary');
+        setIsExpanded(false); // Close sidebar on mobile after navigation
+      },
+      roles: ['admin'],
+    },
+    {
+      name: 'Summary',
       icon: Plus,
       color: 'blue',
       size: 20,
