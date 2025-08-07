@@ -19,19 +19,9 @@ const Sidebar = () => {
   const userApproved = user?.publicMetadata?.approved;
 
   const navItems = [
+    
     {
       name: 'New Complaint',
-      icon: TrendingUp,
-      color: 'green',
-      size: 20,
-      onClick: () => {
-        router.push('/dashboard/admin/summary');
-        setIsExpanded(false); // Close sidebar on mobile after navigation
-      },
-      roles: ['admin'],
-    },
-    {
-      name: 'Summary',
       icon: Plus,
       color: 'blue',
       size: 20,
@@ -103,6 +93,17 @@ const Sidebar = () => {
         setIsExpanded(false);
       },
       roles: ['employee', 'worker', 'admin', 'manager'],
+    },
+    {
+      name: 'Summary',
+      icon: TrendingUp,
+      color: 'green',
+      size: 20,
+      onClick: () => {
+        router.push('/dashboard/admin/summary');
+        setIsExpanded(false); // Close sidebar on mobile after navigation
+      },
+      roles: ['admin'],
     },
     // {
     //   name: 'Logout',
