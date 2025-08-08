@@ -25,7 +25,7 @@ export const generateComplainDataSchema = z.object({
 export const generateComplainResponseSchema = responseSchema(generateComplainDataSchema);
 
 export const getComplaintLogsDataSchema = z.object({
-    logs: z.array(z.object({
+    logs: z.array(z.object( {
         id: z.number(),
         complaintId: z.number(),
         comment: z.string(),
